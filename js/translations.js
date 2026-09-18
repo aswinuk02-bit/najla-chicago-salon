@@ -1,5 +1,5 @@
 /* =========================================================================
-   AMEERA Al Hayat Beauty Salon — bilingual content (EN / AR)
+   Najla Chicago Salon — bilingual content (EN / AR)
    Edit strings here; no HTML duplication needed per language.
    ========================================================================= */
 
@@ -8,8 +8,8 @@ const UI = {
   en: {
     dir: "ltr",
     lang: "en",
-    siteName: "AMEERA Al Hayat Beauty Salon",
-    siteNameShort: "AMEERA Al Hayat",
+    siteName: "Najla Chicago Salon",
+    siteNameShort: "Najla Chicago",
     tagline: "Skin • Hair • MakeUp • Nails",
     nav: {
       home: "Home",
@@ -21,17 +21,17 @@ const UI = {
     },
     hero: {
       eyebrow: "Welcome to",
-      title: "AMEERA Al Hayat Beauty Salon",
+      title: "Najla Chicago Salon",
       tagline: "Skin – Hair – MakeUp – Nails",
       slogan: "Beauty starts with confidence",
-      subtitle: "Where every visit is a moment of care, crafted with premium products, skilled hands and a warm, welcoming space in the heart of the UAE.",
+      subtitle: "Where every visit is a moment of care, crafted with premium products, skilled hands and a warm, welcoming space in the heart of Chicago.",
       ctaPrimary: "Book an Appointment",
       ctaSecondary: "View Services"
     },
     about: {
       eyebrow: "About Us",
       title: "Beauty, Crafted With Care",
-      p1: "AMEERA Al Hayat Beauty Salon is a premium destination for women who want to look and feel their best. Nestled in the UAE, our salon blends international techniques with a personal, attentive touch for every client who walks through our doors.",
+      p1: "Najla Chicago Salon is a premium destination for women who want to look and feel their best. Our salon blends international techniques with a personal, attentive touch for every client who walks through our doors.",
       p2: "Our licensed specialists are trained across hair, skin, nails and beauty, using trusted professional-grade products in a clean, relaxing and fully hygienic environment.",
       p3: "From a quick blow-dry to a full bridal transformation, we treat every appointment as a chance to make you feel confident, refreshed and radiant.",
       stats: [
@@ -70,7 +70,7 @@ const UI = {
       addressValue: "Shop No. XX, [Street Name], [Area], Dubai, United Arab Emirates",
       phoneLabel: "Phone / WhatsApp",
       emailLabel: "Email",
-      emailValue: "info@ameeraalhayat.com",
+      emailValue: "info@najlachicagosalon.com",
       hoursLabel: "Opening Hours",
       hours: [
         { day: "Saturday – Thursday", time: "10:00 AM – 10:00 PM" },
@@ -98,8 +98,8 @@ const UI = {
   ar: {
     dir: "rtl",
     lang: "ar",
-    siteName: "صالون الأميرة الحياة للتجميل",
-    siteNameShort: "الأميرة الحياة",
+    siteName: "صالون نجلاء شيكاغو",
+    siteNameShort: "نجلاء شيكاغو",
     tagline: "بشرة • شعر • مكياج • أظافر",
     nav: {
       home: "الرئيسية",
@@ -111,17 +111,17 @@ const UI = {
     },
     hero: {
       eyebrow: "أهلاً بكِ في",
-      title: "صالون الأميرة الحياة للتجميل",
+      title: "صالون نجلاء شيكاغو",
       tagline: "بشرة – شعر – مكياج – أظافر",
       slogan: "الجمال يبدأ بالثقة",
-      subtitle: "حيث تتحول كل زيارة إلى لحظة عناية حقيقية، بمنتجات فاخرة وأيدٍ خبيرة وأجواء دافئة ومرحبة في قلب الإمارات.",
+      subtitle: "حيث تتحول كل زيارة إلى لحظة عناية حقيقية، بمنتجات فاخرة وأيدٍ خبيرة وأجواء دافئة ومرحبة في قلب شيكاغو.",
       ctaPrimary: "احجزي موعدك",
       ctaSecondary: "استعرضي الخدمات"
     },
     about: {
       eyebrow: "من نحن",
       title: "جمالكِ، بعناية فائقة",
-      p1: "صالون الأميرة الحياة للتجميل وجهة راقية لكل امرأة تبحث عن إطلالة وشعور استثنائيين. يقع صالوننا في دولة الإمارات، ويجمع بين أحدث التقنيات العالمية ولمسة شخصية دافئة لكل عميلة تدخل أبوابنا.",
+      p1: "صالون نجلاء شيكاغو وجهة راقية لكل امرأة تبحث عن إطلالة وشعور استثنائيين. يجمع صالوننا بين أحدث التقنيات العالمية ولمسة شخصية دافئة لكل عميلة تدخل أبوابنا.",
       p2: "فريقنا من الأخصائيات المرخّصات مدرّب في مجالات الشعر والبشرة والأظافر والتجميل، ويستخدم منتجات احترافية موثوقة ضمن بيئة نظيفة ومريحة وصحية بالكامل.",
       p3: "من تسريحة سريعة إلى تحضير عروس متكامل، نتعامل مع كل موعد كفرصة لنمنحكِ الثقة والانتعاش والإشراقة.",
       stats: [
@@ -160,7 +160,7 @@ const UI = {
       addressValue: "محل رقم XX، [اسم الشارع]، [المنطقة]، دبي، الإمارات العربية المتحدة",
       phoneLabel: "الهاتف / واتساب",
       emailLabel: "البريد الإلكتروني",
-      emailValue: "info@ameeraalhayat.com",
+      emailValue: "info@najlachicagosalon.com",
       hoursLabel: "ساعات العمل",
       hours: [
         { day: "السبت – الخميس", time: "10:00 صباحًا – 10:00 مساءً" },
@@ -200,7 +200,7 @@ const TESTIMONIALS = [
     name: { en: "Sara M.", ar: "سارة م." },
     rating: 5,
     text: {
-      en: "I go for my Moroccan bath every month now — so relaxing, and the place is spotless. Highly recommend AMEERA Al Hayat!",
+      en: "I go for my Moroccan bath every month now — so relaxing, and the place is spotless. Highly recommend Najla Chicago Salon!",
       ar: "صرت أروح للحمام المغربي كل شهر — استرخاء حقيقي، والمكان نظيف جدًا. أنصح فيه بقوة!"
     }
   },

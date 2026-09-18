@@ -1,20 +1,28 @@
 /* =========================================================================
-   AMEERA Al Hayat Beauty Salon — stylesheet
+   Najla Chicago Salon — stylesheet
    ========================================================================= */
 
 :root {
-  --pink-900: #7a0e3c;
-  --pink-700: #C2185B;
-  --pink-600: #D6336C;
-  --pink-500: #e0568a;
-  --pink-300: #eb8fb4;
-  --pink-100: #F6D2DF;
-  --pink-50:  #F8E0E7;
-  --blush:    #FBE7ED;
-  --gold:     #d9a441;
-  --ink:      #2b1420;
-  --ink-soft: #6b4a58;
-  --white:    #ffffff;
+  /* Black surfaces */
+  --bg:          #0b0908;
+  --bg-alt:      #141009;
+  --surface:     #1e1811;
+  --surface-alt: #2b2318;
+  --border:      rgba(217, 175, 96, 0.16);
+
+  /* Gold accents */
+  --gold-700: #9c7a2c;
+  --gold-600: #c9a227;
+  --gold-500: #d9b84a;
+  --gold-300: #e8d28f;
+  --gold-100: #f4e8c8;
+  --gold:     var(--gold-600);
+
+  /* Text */
+  --ink:        #f3ead8;
+  --ink-soft:   #c7b593;
+  --black-text: #14100a;
+  --white:      #ffffff;
 
   --font-heading: 'Playfair Display', 'Cormorant', serif;
   --font-body: 'Poppins', sans-serif;
@@ -23,24 +31,40 @@
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 28px;
-  --shadow-sm: 0 4px 16px rgba(194, 24, 91, 0.08);
-  --shadow-md: 0 12px 32px rgba(194, 24, 91, 0.14);
-  --shadow-lg: 0 20px 60px rgba(122, 14, 60, 0.18);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
 
   --header-h: 84px;
 
   /* Directional overlay gradient for photo backgrounds — mirrors in RTL.
      Used where text sits directly on the photo (Hero, section-heading
-     banners) and needs strong, guaranteed contrast. */
+     banners). Kept light so the photo itself stays clearly visible,
+     with just enough dark tint for text contrast. */
   --overlay-dir: to bottom right;
-  --overlay-from: rgba(194, 24, 91, 0.75);
-  --overlay-to: rgba(248, 224, 231, 0.85);
+  --overlay-from: rgba(11, 9, 8, 0.5);
+  --overlay-to: rgba(11, 9, 8, 0.75);
 
   /* Lighter wash for photo backgrounds that only ever peek through behind
-     opaque cards (the Services category panels) — a light brand tint
-     instead of a heavy tint that obscures the photo. */
-  --overlay-light-from: rgba(194, 24, 91, 0.32);
-  --overlay-light-to: rgba(248, 224, 231, 0.38);
+     opaque cards (the Services category panels) — a light tint instead of
+     a heavy tint that obscures the photo. */
+  --overlay-light-from: rgba(11, 9, 8, 0.45);
+  --overlay-light-to: rgba(11, 9, 8, 0.65);
+
+  /* Motion — every slide/stagger animation in the Services tabs reads
+     these, so the feel can be tuned from one place. Tab-indicator and
+     content-slide durations are intentionally separate: the indicator
+     is a small element that should feel snappy, the content slide is
+     the larger, more deliberate motion. */
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-indicator-duration: 220ms;
+  --motion-exit-duration: 160ms;
+  --motion-duration: 300ms;
+  --motion-slide-distance: 32px;
+  --row-duration: 380ms;
+  --row-slide-distance: 16px;
+  --row-stagger-step: 50ms;
+  --row-stagger-max: 600ms;
 }
 
 html[dir="rtl"] {
@@ -59,7 +83,7 @@ input { font: inherit; }
 body {
   font-family: var(--font-body);
   color: var(--ink);
-  background: var(--blush);
+  background: var(--bg);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -81,7 +105,7 @@ h1, h2, h3, h4 {
   font-family: var(--font-heading);
   font-weight: 600;
   line-height: 1.25;
-  color: var(--pink-900);
+  color: var(--gold-500);
 }
 html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3, html[dir="rtl"] h4 {
   font-family: var(--font-arabic);
@@ -97,7 +121,7 @@ section { padding: 96px 0; position: relative; }
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--pink-600);
+  color: var(--gold-600);
   margin-bottom: 10px;
 }
 html[dir="rtl"] .eyebrow { letter-spacing: normal; }
@@ -120,17 +144,17 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   white-space: nowrap;
 }
 .btn-primary {
-  background: linear-gradient(135deg, var(--pink-600), var(--pink-700));
-  color: var(--white);
+  background: linear-gradient(135deg, var(--gold-600), var(--gold-500));
+  color: var(--black-text);
   box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .btn-outline {
   background: transparent;
-  color: var(--pink-700);
-  border: 1.5px solid var(--pink-600);
+  color: var(--gold-500);
+  border: 1.5px solid var(--gold-600);
 }
-.btn-outline:hover { background: var(--pink-600); color: var(--white); transform: translateY(-2px); }
+.btn-outline:hover { background: var(--gold-600); color: var(--black-text); transform: translateY(-2px); }
 .btn-lg { padding: 16px 34px; font-size: 1rem; }
 
 /* ---------- Header ---------- */
@@ -139,13 +163,13 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  background: rgba(251, 231, 237, 0.85);
+  background: rgba(11, 9, 8, 0.85);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border-bottom: 1px solid rgba(194, 24, 91, 0.08);
+  border-bottom: 1px solid rgba(217, 175, 96, 0.14);
   transition: box-shadow 0.3s ease;
 }
-.site-header.scrolled { box-shadow: 0 4px 24px rgba(194, 24, 91, 0.1); }
+.site-header.scrolled { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45); }
 
 .header-inner {
   height: 100%;
@@ -161,7 +185,7 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 1.15rem;
-  color: var(--pink-700);
+  color: var(--gold-500);
   letter-spacing: 0.01em;
 }
 html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
@@ -179,7 +203,7 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
   position: absolute;
   bottom: 0; left: 0;
   width: 0; height: 2px;
-  background: var(--pink-600);
+  background: var(--gold-600);
   transition: width 0.25s ease;
 }
 .main-nav a:hover::after { width: 100%; }
@@ -189,13 +213,13 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
 .lang-toggle {
   font-weight: 600;
   font-size: 0.85rem;
-  color: var(--pink-700);
-  border: 1.5px solid var(--pink-300);
+  color: var(--gold-500);
+  border: 1.5px solid var(--gold-700);
   border-radius: 50px;
   padding: 8px 16px;
   transition: all 0.2s ease;
 }
-.lang-toggle:hover { background: var(--pink-100); }
+.lang-toggle:hover { background: var(--surface-alt); }
 
 .btn-book-now { padding: 10px 22px; font-size: 0.88rem; }
 
@@ -210,7 +234,7 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
   display: block;
   width: 100%;
   height: 2px;
-  background: var(--pink-700);
+  background: var(--gold-500);
   border-radius: 2px;
   transition: all 0.25s ease;
 }
@@ -232,11 +256,11 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
 .hero-bg {
   position: absolute; inset: 0;
   background-image:
-    radial-gradient(ellipse at 85% 15%, rgba(217, 164, 65, 0.16), transparent 50%),
+    radial-gradient(ellipse at 85% 15%, rgba(201, 162, 39, 0.2), transparent 50%),
     linear-gradient(var(--overlay-dir), var(--overlay-from), var(--overlay-to)),
-    url('../assets/images/optimized/hair-saloon-1.jpg');
+    url('../assets/images/optimized/banner-image.jpg');
   background-size: cover, cover, cover;
-  background-position: center, center 30%, center 30%;
+  background-position: center, center 25%, 68% 25%;
   background-repeat: no-repeat;
   background-attachment: scroll, fixed, fixed;
   z-index: 0;
@@ -247,20 +271,25 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
 .hero-petals {
   position: absolute; inset: 0; z-index: 0;
   background-image:
-    radial-gradient(circle, var(--pink-300) 2px, transparent 2.5px),
-    radial-gradient(circle, var(--gold) 1.5px, transparent 2px);
+    radial-gradient(circle, var(--gold-300) 2px, transparent 2.5px),
+    radial-gradient(circle, var(--gold-600) 1.5px, transparent 2px);
   background-size: 140px 140px, 90px 90px;
   background-position: 0 0, 40px 60px;
   opacity: 0.35;
 }
 .hero-inner { position: relative; z-index: 1; max-width: 780px; }
+.hero-inner .eyebrow,
+.hero h1,
+.hero-tagline,
+.hero-slogan,
+.hero-subtitle { text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7); }
 .hero-logo {
   width: 120px; height: 120px;
   border-radius: 50%;
   margin: 0 auto 20px;
   box-shadow: var(--shadow-lg);
   object-fit: cover;
-  border: 4px solid var(--white);
+  border: 4px solid var(--gold-500);
 }
 .hero h1 {
   font-size: clamp(2rem, 5vw, 3.4rem);
@@ -270,7 +299,7 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
   font-family: var(--font-heading);
   font-style: italic;
   font-size: clamp(1.1rem, 2vw, 1.4rem);
-  color: var(--pink-600);
+  color: var(--gold-300);
   margin-bottom: 18px;
   letter-spacing: 0.02em;
 }
@@ -279,7 +308,7 @@ html[dir="rtl"] .hero-tagline { font-family: var(--font-arabic); font-style: nor
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: clamp(1rem, 1.6vw, 1.15rem);
-  color: var(--pink-900);
+  color: var(--gold-500);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 22px;
@@ -290,7 +319,7 @@ html[dir="rtl"] .hero-tagline { font-family: var(--font-arabic); font-style: nor
   display: inline-block;
   width: 28px;
   height: 1px;
-  background: var(--gold);
+  background: var(--gold-600);
   vertical-align: middle;
   margin: 0 12px;
 }
@@ -323,7 +352,7 @@ html[dir="rtl"] .hero-slogan { font-family: var(--font-arabic); font-weight: 700
   bottom: -24px; left: -24px;
   width: 130px; height: 130px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--pink-300), var(--gold));
+  background: linear-gradient(135deg, var(--gold-300), var(--gold-600));
   opacity: 0.5;
   z-index: -1;
 }
@@ -340,7 +369,8 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
 }
 .stat-box {
   text-align: center;
-  background: var(--pink-50);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 18px 10px;
 }
@@ -348,7 +378,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--pink-700);
+  color: var(--gold-500);
   display: block;
 }
 .stat-box .stat-label {
@@ -358,7 +388,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
 }
 
 /* ---------- Services ---------- */
-.services { background: linear-gradient(180deg, var(--white), var(--pink-50)); }
+.services { background: linear-gradient(180deg, var(--bg), var(--bg-alt)); }
 
 /* "Services & Price List" heading sits on its own full-width photo banner —
    contained (not the whole, very tall, section) so the overlay gradient
@@ -381,9 +411,9 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   z-index: 0;
   background-image:
     linear-gradient(var(--overlay-dir), var(--overlay-from), var(--overlay-to)),
-    url('../assets/images/optimized/hair-saloon-1.jpg');
+    url('../assets/images/optimized/banner-image.jpg');
   background-size: cover;
-  background-position: center 25%;
+  background-position: 68% 25%;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -394,6 +424,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
 .services .section-heading > * {
   position: relative;
   z-index: 1;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7);
 }
 
 .services-search {
@@ -405,72 +436,134 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   width: 100%;
   padding: 14px 20px 14px 48px;
   border-radius: 50px;
-  border: 1.5px solid var(--pink-300);
-  background: var(--white);
+  border: 1.5px solid var(--gold-700);
+  background: var(--surface);
+  color: var(--ink);
   font-size: 0.95rem;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
+.services-search input::placeholder { color: var(--ink-soft); }
 html[dir="rtl"] .services-search input { padding: 14px 48px 14px 20px; }
-.services-search input:focus { border-color: var(--pink-600); box-shadow: 0 0 0 4px rgba(214,51,108,0.1); }
+.services-search input:focus { border-color: var(--gold-600); box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.15); }
 .search-icon {
   position: absolute;
   left: 18px; top: 50%; transform: translateY(-50%);
-  color: var(--pink-500);
+  color: var(--gold-500);
   pointer-events: none;
 }
 html[dir="rtl"] .search-icon { left: auto; right: 18px; }
 
 .services-tabs {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-bottom: 44px;
 }
+/* Sliding active-tab pill — positioned/sized from JS (measured against the
+   real tab it sits behind), animated only via transform so it stays smooth
+   on cheap phones. Width/height are assigned directly (not transitioned):
+   see the motion-rules note in main.js for why. */
+.tab-indicator {
+  position: absolute;
+  top: 0; left: 0;
+  border-radius: 50px;
+  background: linear-gradient(135deg, var(--gold-600), var(--gold-500));
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--motion-indicator-duration) var(--motion-ease);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 0;
+}
+.tab-indicator.no-anim { transition: none; }
 .services-tab {
+  position: relative;
+  z-index: 1;
   padding: 10px 20px;
   border-radius: 50px;
   font-weight: 500;
   font-size: 0.9rem;
-  background: var(--white);
-  border: 1.5px solid var(--pink-100);
+  background: var(--surface);
+  border: 1.5px solid var(--surface-alt);
   color: var(--ink-soft);
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
-.services-tab:hover { border-color: var(--pink-300); color: var(--pink-700); }
+.services-tab:hover { border-color: var(--gold-600); color: var(--gold-500); }
 .services-tab.active {
-  background: linear-gradient(135deg, var(--pink-600), var(--pink-700));
+  background: transparent;
   border-color: transparent;
-  color: var(--white);
-  box-shadow: var(--shadow-sm);
+  color: var(--black-text);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-indicator { transition: none; }
+}
+
+@media (max-width: 640px) {
+  /* A single scrollable row of chips reads better than wrapped rows once
+     there isn't room for ~8 tabs side by side; it's also what makes swipe
+     navigation (main.js) and "scroll the active tab into view" meaningful. */
+  .services-tabs {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .services-tabs::-webkit-scrollbar { display: none; }
 }
 
 .services-panel { display: none; }
-.services-panel.active { display: block; animation: fadeUp 0.4s ease; }
+.services-panel.active { display: block; }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Directional content slide between categories — old panel nudges out,
+   new panel slides in from the opposite edge, both combined with a fade.
+   --slide-dir is set from JS per switch: 1 = the new category is to the
+   right of the old one, -1 = to the left. */
+.services-panel.slide-out {
+  transition: transform var(--motion-exit-duration) var(--motion-ease), opacity var(--motion-exit-duration) var(--motion-ease);
+  transform: translateX(calc(var(--slide-dir, 1) * -1 * var(--motion-slide-distance)));
+  opacity: 0;
+}
+.services-panel.slide-in-start {
+  transition: none;
+  transform: translateX(calc(var(--slide-dir, 1) * var(--motion-slide-distance)));
+  opacity: 0;
+}
+.services-panel.slide-in {
+  transition: transform var(--motion-duration) var(--motion-ease), opacity var(--motion-duration) var(--motion-ease);
+  transform: translateX(0);
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .services-panel.slide-out,
+  .services-panel.slide-in-start,
+  .services-panel.slide-in {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
 }
 
-/* Category photo backgrounds — image fetch is naturally deferred by the
-   browser until each tab panel leaves display:none and becomes active. */
-.services-panel[data-cat-panel="nails"],
-.services-panel[data-cat-panel="massage"],
-.services-panel[data-cat-panel="moroccan-bath"] {
+/* Category photo backgrounds — every category now has its own photo, so
+   these rules apply to all Services panels rather than an opt-in list.
+   Image fetch is naturally deferred by the browser until each tab panel
+   leaves display:none and becomes active. */
+.services-panel {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
   padding: 56px 22px 22px;
   box-shadow: var(--shadow-md);
 }
-.services-panel[data-cat-panel="nails"]::before,
-.services-panel[data-cat-panel="massage"]::before,
-.services-panel[data-cat-panel="moroccan-bath"]::before {
+.services-panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -480,41 +573,51 @@ html[dir="rtl"] .search-icon { left: auto; right: 18px; }
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
+.services-panel[data-cat-panel="hair"]::before {
+  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
+    url('../assets/images/optimized/hair-2.jpg');
+}
+.services-panel[data-cat-panel="waxing-threading"]::before {
+  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
+    url('../assets/images/optimized/waxing.jpg');
+}
+.services-panel[data-cat-panel="skin"]::before {
+  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
+    url('../assets/images/optimized/skin.jpg');
+}
 .services-panel[data-cat-panel="nails"]::before {
   background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
     url('../assets/images/optimized/nail-salon-1.jpg');
+}
+.services-panel[data-cat-panel="lash-brow"]::before {
+  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
+    url('../assets/images/optimized/eyelash-eyebrow.jpg');
 }
 .services-panel[data-cat-panel="massage"]::before,
 .services-panel[data-cat-panel="moroccan-bath"]::before {
   background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
     url('../assets/images/optimized/massage-1.jpg');
 }
-.services-panel[data-cat-panel="nails"] > *,
-.services-panel[data-cat-panel="massage"] > *,
-.services-panel[data-cat-panel="moroccan-bath"] > * {
+.services-panel[data-cat-panel="henna"]::before {
+  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
+    url('../assets/images/optimized/henna.jpg');
+}
+.services-panel > * {
   position: relative;
   z-index: 1;
 }
 @media (max-width: 768px) {
-  .services-panel[data-cat-panel="nails"]::before,
-  .services-panel[data-cat-panel="massage"]::before,
-  .services-panel[data-cat-panel="moroccan-bath"]::before {
-    background-attachment: scroll;
-  }
-  .services-panel[data-cat-panel="nails"],
-  .services-panel[data-cat-panel="massage"],
-  .services-panel[data-cat-panel="moroccan-bath"] {
-    padding: 36px 14px 14px;
-  }
+  .services-panel::before { background-attachment: scroll; }
+  .services-panel { padding: 36px 14px 14px; }
 }
 
 .subcategory-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   margin-bottom: 20px;
   overflow: hidden;
-  border: 1px solid rgba(194,24,91,0.06);
+  border: 1px solid var(--border);
 }
 .subcategory-header {
   width: 100%;
@@ -525,8 +628,8 @@ html[dir="rtl"] .search-icon { left: auto; right: 18px; }
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 1.15rem;
-  color: var(--pink-900);
-  background: var(--pink-50);
+  color: var(--gold-500);
+  background: var(--surface-alt);
   text-align: start;
 }
 html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weight: 700; }
@@ -535,7 +638,7 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   font-weight: 500;
   font-size: 0.78rem;
   color: var(--ink-soft);
-  background: var(--white);
+  background: var(--surface);
   padding: 3px 12px;
   border-radius: 50px;
   margin-inline-start: 12px;
@@ -543,7 +646,7 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 .subcategory-header .chevron {
   margin-inline-start: auto;
   transition: transform 0.25s ease;
-  color: var(--pink-600);
+  color: var(--gold-500);
   flex-shrink: 0;
 }
 .subcategory-card.open .chevron { transform: rotate(180deg); }
@@ -562,16 +665,23 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   justify-content: space-between;
   gap: 16px;
   padding: 13px 0;
-  border-bottom: 1px dashed rgba(194,24,91,0.12);
+  border-bottom: 1px dashed rgba(217, 175, 96, 0.18);
+  opacity: 0;
+  transform: translateY(var(--row-slide-distance));
+  transition: opacity var(--row-duration) var(--motion-ease), transform var(--row-duration) var(--motion-ease);
 }
+.service-row.row-in { opacity: 1; transform: translateY(0); }
 .service-row:last-child { border-bottom: none; }
+@media (prefers-reduced-motion: reduce) {
+  .service-row { transition: none; opacity: 1; transform: none; }
+}
 .service-name { color: var(--ink); font-size: 0.96rem; flex: 1; }
 .service-name .addon-tag {
   display: inline-block;
   font-size: 0.68rem;
   font-weight: 600;
-  color: var(--gold);
-  border: 1px solid var(--gold);
+  color: var(--gold-500);
+  border: 1px solid var(--gold-500);
   border-radius: 50px;
   padding: 1px 8px;
   margin-inline-end: 8px;
@@ -581,14 +691,14 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 }
 .service-dots {
   flex: 1;
-  border-bottom: 1px dotted rgba(194,24,91,0.2);
+  border-bottom: 1px dotted rgba(217, 175, 96, 0.25);
   margin: 0 8px;
   min-width: 20px;
   display: none;
 }
 .service-price {
   font-weight: 700;
-  color: var(--pink-700);
+  color: var(--gold-500);
   white-space: nowrap;
   font-size: 0.96rem;
 }
@@ -602,7 +712,7 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 }
 
 /* ---------- Gallery ---------- */
-.gallery { background: var(--white); }
+.gallery { background: var(--bg); }
 .gallery-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -625,22 +735,22 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 .gallery-grid a:nth-child(4n+1) { grid-row: span 2; aspect-ratio: 1/2; }
 
 /* ---------- Testimonials ---------- */
-.testimonials { background: linear-gradient(180deg, var(--pink-50), var(--white)); }
+.testimonials { background: linear-gradient(180deg, var(--bg-alt), var(--bg)); }
 .testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
 .testimonial-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   padding: 30px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid rgba(194,24,91,0.06);
+  border: 1px solid var(--border);
 }
-.testimonial-stars { color: var(--gold); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
+.testimonial-stars { color: var(--gold-500); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
 .testimonial-text { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 18px; font-style: italic; }
-.testimonial-name { font-weight: 600; color: var(--pink-700); }
+.testimonial-name { font-weight: 600; color: var(--gold-500); }
 
 /* ---------- Contact ---------- */
 .contact-grid {
@@ -650,11 +760,11 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   align-items: start;
 }
 .contact-card {
-  background: var(--white);
+  background: var(--surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 36px;
-  border: 1px solid rgba(194,24,91,0.06);
+  border: 1px solid var(--border);
 }
 .contact-item {
   display: flex;
@@ -665,32 +775,32 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   font-size: 1.3rem;
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--pink-50);
+  background: var(--surface-alt);
   border-radius: 50%;
   flex-shrink: 0;
 }
 .contact-item h4 { font-size: 0.95rem; margin-bottom: 4px; }
 .contact-item p { color: var(--ink-soft); font-size: 0.92rem; }
 .phone-link { transition: color 0.2s ease; }
-.phone-link:hover { color: var(--pink-700); text-decoration: underline; }
-.footer-contact .phone-link:hover { color: var(--pink-300); }
+.phone-link:hover { color: var(--gold-500); text-decoration: underline; }
+.footer-contact .phone-link:hover { color: var(--gold-300); }
 
-.hours-block { margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--pink-100); }
+.hours-block { margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--surface-alt); }
 .hours-block h4 { margin-bottom: 12px; font-size: 0.95rem; }
 .hours-table { width: 100%; border-collapse: collapse; }
 .hours-table td { padding: 6px 0; font-size: 0.9rem; color: var(--ink-soft); }
-.hours-table td:last-child { text-align: end; font-weight: 600; color: var(--pink-700); }
+.hours-table td:last-child { text-align: end; font-weight: 600; color: var(--gold-500); }
 
 .social-icons { display: flex; gap: 12px; }
 .social-icon {
   width: 42px; height: 42px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
-  background: var(--pink-50);
-  color: var(--pink-700);
+  background: var(--surface-alt);
+  color: var(--gold-500);
   transition: all 0.2s ease;
 }
-.social-icon:hover { background: var(--pink-600); color: var(--white); transform: translateY(-2px); }
+.social-icon:hover { background: var(--gold-600); color: var(--black-text); transform: translateY(-2px); }
 
 .map-title { font-size: 1rem; margin-bottom: 14px; }
 .map-frame {
@@ -698,29 +808,29 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   height: 460px;
-  border: 1px solid rgba(194,24,91,0.06);
+  border: 1px solid var(--border);
 }
 
 /* ---------- Footer ---------- */
-.site-footer { background: var(--pink-900); color: rgba(255,255,255,0.85); padding-top: 72px; }
+.site-footer { background: var(--bg-alt); color: rgba(243, 234, 216, 0.85); padding-top: 72px; }
 .footer-inner {
   display: grid;
   grid-template-columns: 1.3fr 1fr 1fr;
   gap: 48px;
   padding-bottom: 48px;
 }
-.footer-brand .brand-name { color: var(--white); font-size: 1.3rem; display: block; margin: 12px 0 14px; }
+.footer-brand .brand-name { color: var(--gold-500); font-size: 1.3rem; display: block; margin: 12px 0 14px; }
 .footer-logo { width: 56px; height: 56px; border-radius: 50%; }
 .footer-brand p { font-size: 0.88rem; opacity: 0.75; max-width: 320px; }
-.site-footer h4 { color: var(--white); font-size: 1rem; margin-bottom: 18px; }
+.site-footer h4 { color: var(--gold-300); font-size: 1rem; margin-bottom: 18px; }
 .footer-links ul { display: flex; flex-direction: column; gap: 10px; }
 .footer-links a { font-size: 0.9rem; opacity: 0.8; transition: opacity 0.2s ease; }
-.footer-links a:hover { opacity: 1; color: var(--pink-300); }
+.footer-links a:hover { opacity: 1; color: var(--gold-300); }
 .footer-contact p { font-size: 0.88rem; opacity: 0.8; margin-bottom: 8px; }
 .footer-contact .social-icons { margin-top: 14px; }
-.footer-contact .social-icon { background: rgba(255,255,255,0.1); color: var(--white); }
+.footer-contact .social-icon { background: rgba(255, 255, 255, 0.08); color: var(--gold-300); }
 
-.footer-bottom { border-top: 1px solid rgba(255,255,255,0.12); padding: 22px 0; }
+.footer-bottom { border-top: 1px solid rgba(255, 255, 255, 0.12); padding: 22px 0; }
 .footer-bottom-inner {
   display: flex;
   justify-content: space-between;
@@ -730,23 +840,35 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   opacity: 0.7;
 }
 
-/* ---------- WhatsApp FAB ---------- */
-.whatsapp-fab {
+/* ---------- Call + WhatsApp FABs ---------- */
+.whatsapp-fab,
+.call-fab {
   position: fixed;
-  bottom: 26px;
   right: 26px;
   width: 60px; height: 60px;
-  background: #25D366;
-  color: var(--white);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
   z-index: 900;
-  animation: pulse 2.4s infinite;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: transform 0.2s ease;
 }
-html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
-.whatsapp-fab:hover { transform: scale(1.08); }
+.whatsapp-fab {
+  bottom: 26px;
+  background: #25D366;
+  color: var(--white);
+  box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+  animation: pulse 2.4s infinite;
+}
+.call-fab {
+  bottom: 98px;
+  background: linear-gradient(135deg, var(--gold-600), var(--gold-500));
+  color: var(--black-text);
+  box-shadow: var(--shadow-md);
+}
+html[dir="rtl"] .whatsapp-fab,
+html[dir="rtl"] .call-fab { right: auto; left: 26px; }
+.whatsapp-fab:hover,
+.call-fab:hover { transform: scale(1.08); }
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(37,211,102,0.45); }
   70% { box-shadow: 0 0 0 14px rgba(37,211,102,0); }
@@ -757,7 +879,7 @@ html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
 .reveal {
   opacity: 0;
   transform: translateY(28px) scale(0.97);
-  transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.75s var(--motion-ease), transform 0.75s var(--motion-ease);
   will-change: opacity, transform;
 }
 .reveal.in-view {
@@ -773,7 +895,7 @@ html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
 .reveal-item {
   opacity: 0;
   transform: translateY(26px);
-  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 0.55s var(--motion-ease), transform 0.55s var(--motion-ease);
 }
 .reveal-item:nth-child(odd) { transform: translateY(26px) translateX(-10px); }
 .reveal-item:nth-child(even) { transform: translateY(26px) translateX(10px); }
@@ -811,7 +933,7 @@ html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
     position: fixed;
     top: var(--header-h);
     inset-inline: 0;
-    background: var(--white);
+    background: var(--bg-alt);
     box-shadow: var(--shadow-md);
     max-height: 0;
     overflow: hidden;
@@ -819,7 +941,7 @@ html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
   }
   .main-nav.open { max-height: 400px; }
   .main-nav ul { flex-direction: column; gap: 0; padding: 8px 24px 20px; }
-  .main-nav a { display: block; padding: 14px 0; border-bottom: 1px solid var(--pink-50); }
+  .main-nav a { display: block; padding: 14px 0; border-bottom: 1px solid var(--surface-alt); }
   .hamburger { display: flex; }
   .btn-book-now { display: none; }
 }
@@ -839,20 +961,4 @@ html[dir="rtl"] .whatsapp-fab { right: auto; left: 26px; }
   .service-list { padding: 4px 18px 16px; }
   .contact-card { padding: 26px; }
   .map-frame { height: 320px; }
-}
-
-/* ---------- Dark mode (system preference) ---------- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --blush: #1a0d13;
-    --white: #241017;
-    --ink: #f5e6ec;
-    --ink-soft: #cba3b3;
-    --pink-50: #2a1119;
-    --pink-100: #35141f;
-  }
-  .site-header { background: rgba(26, 13, 19, 0.85); border-bottom-color: rgba(255,255,255,0.06); }
-  .hero-bg { background: radial-gradient(ellipse at 20% 20%, rgba(214,51,108,0.22), transparent 55%), radial-gradient(ellipse at 85% 15%, rgba(217,164,65,0.16), transparent 50%), linear-gradient(180deg, var(--blush) 0%, var(--white) 100%); }
-  .services-search input, .services-tab, .subcategory-card, .contact-card, .testimonial-card { background: var(--white); }
-  .main-nav { background: var(--white); }
 }

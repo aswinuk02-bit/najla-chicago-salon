@@ -1,5 +1,5 @@
 /* =========================================================================
-   AMEERA Al Hayat Beauty Salon — site behavior
+   Najla Chicago Salon — site behavior
    Language toggle + RTL switch, services tabs/accordion/search,
    dynamic rendering of stats/gallery/testimonials/hours, nav + WhatsApp FAB.
    ========================================================================= */
@@ -14,28 +14,45 @@
     whatsappNumber: "971529527752", // primary — digits only, used for Book Now / hero / FAB / WhatsApp icon
     whatsappNumberSecondary: "971555965577", // shown as a second contact line, also click-to-WhatsApp
     whatsappDefaultMessage: {
-      en: "Hi AMEERA Al Hayat! I'd like to book an appointment.",
-      ar: "مرحبًا صالون الأميرة الحياة! أرغب في حجز موعد."
+      en: "Hi Najla Chicago Salon! I'd like to book an appointment.",
+      ar: "مرحبًا صالون نجلاء شيكاغو! أرغب في حجز موعد."
     },
     instagramUrl: "https://instagram.com/",
     // Local photos only — no external placeholder services. Add/remove
     // entries here as real photos are swapped in under assets/images/.
     galleryImages: [
-      { file: "hair-saloon-1.jpg", alt: { en: "Hair styling at AMEERA Al Hayat", ar: "تصفيف الشعر في صالون الأميرة الحياة" } },
-      { file: "hair-saloon-2.jpg", alt: { en: "Braided hairstyle detail", ar: "تفاصيل تسريحة الضفائر" } },
+      { file: "banner-image.jpg", alt: { en: "Hair styling at Najla Chicago Salon", ar: "تصفيف الشعر في صالون نجلاء شيكاغو" } },
+      { file: "hair-image.jpg", alt: { en: "Stylist finishing a client's hair", ar: "أخصائية تنهي تصفيف شعر العميلة" } },
+      { file: "hair-2.jpg", alt: { en: "Hair wash at the basin", ar: "غسيل الشعر" } },
+      { file: "skin.jpg", alt: { en: "Facial skin treatment", ar: "علاج البشرة" } },
       { file: "nail-salon-1.jpg", alt: { en: "Manicure finish", ar: "لمسة نهائية للمانيكير" } },
       { file: "nail-salon-2.jpg", alt: { en: "Nail polish colour selection", ar: "اختيار ألوان طلاء الأظافر" } },
       { file: "nail-salon-3.jpg", alt: { en: "Nail polish application", ar: "تطبيق طلاء الأظافر" } },
       { file: "massage-1.jpg", alt: { en: "Hot stone massage treatment", ar: "علاج مساج بالأحجار الساخنة" } },
-      { file: "massage-2.jpg", alt: { en: "Relaxing massage session", ar: "جلسة مساج استرخاء" } }
+      { file: "massage-2.jpg", alt: { en: "Relaxing massage session", ar: "جلسة مساج استرخاء" } },
+      { file: "eyelash-eyebrow.jpg", alt: { en: "Eyelash extension application", ar: "تركيب رموش صناعية" } },
+      { file: "henna.jpg", alt: { en: "Bridal henna design", ar: "نقش حناء للعروس" } },
+      { file: "waxing.jpg", alt: { en: "Facial treatment in progress", ar: "جلسة علاج للوجه" } }
     ]
   };
 
-  const STORAGE_KEY = "ameera-lang";
+  const STORAGE_KEY = "najla-lang";
   let currentLang = localStorage.getItem(STORAGE_KEY) || "en";
 
   const $ = (sel, ctx) => (ctx || document).querySelector(sel);
   const $$ = (sel, ctx) => Array.from((ctx || document).querySelectorAll(sel));
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  // Reads a numeric CSS custom property (e.g. "50ms" / "32px") so the JS
+  // stagger math stays in sync with whatever's tuned in style.css.
+  function getCssNumber(varName, fallback) {
+    const raw = getComputedStyle(document.documentElement).getPropertyValue(varName);
+    const n = parseFloat(raw);
+    return Number.isFinite(n) ? n : fallback;
+  }
 
   /* ---------------------------------------------------------------------
      i18n helpers
@@ -47,8 +64,8 @@
   function applyStaticTranslations() {
     const dict = UI[currentLang];
     document.title = currentLang === "ar"
-      ? "صالون الأميرة الحياة للتجميل | بشرة، شعر، مكياج وأظافر في الإمارات"
-      : "AMEERA Al Hayat Beauty Salon | Skin, Hair, MakeUp & Nails in UAE";
+      ? "صالون نجلاء شيكاغو | بشرة، شعر، مكياج وأظافر"
+      : "Najla Chicago Salon | Skin, Hair, MakeUp & Nails";
 
     $$("[data-i18n]").forEach((el) => {
       const value = getPath(dict, el.getAttribute("data-i18n"));
@@ -107,6 +124,9 @@
       const el = document.getElementById(id);
       if (el) el.setAttribute("href", link);
     });
+
+    const callFab = $("#callFab");
+    if (callFab) callFab.setAttribute("href", `tel:+${CONFIG.whatsappNumber}`);
 
     const numbers = [CONFIG.whatsappNumber, CONFIG.whatsappNumberSecondary];
     const phoneLinesHtml = numbers
@@ -172,7 +192,9 @@
     const panelsEl = $("#servicesPanels");
     if (!tabsEl || !panelsEl) return;
 
-    tabsEl.innerHTML = SERVICES_DATA.map((cat) => `
+    indicatorReady = false;
+    tabsEl.innerHTML = `<span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>` +
+      SERVICES_DATA.map((cat) => `
       <button type="button" class="services-tab${cat.id === activeCategoryId ? " active" : ""}" data-cat="${cat.id}" role="tab" aria-selected="${cat.id === activeCategoryId}">
         ${cat.name[currentLang]}
       </button>
@@ -207,35 +229,328 @@
 
     bindServiceEvents();
     filterServices($("#serviceSearch") ? $("#serviceSearch").value : "");
+
+    positionTabIndicator($(".services-tab.active"));
+    const activePanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
+    if (activePanel) revealOpenRows(activePanel);
   }
 
   function bindServiceEvents() {
     $$(".services-tab").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        activeCategoryId = btn.getAttribute("data-cat");
-        const targetPanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
-        const cards = $$(".subcategory-card", targetPanel);
-        // Drop "in-view" while the panel is still display:none, so the cards
-        // settle back to their hidden state instantly (no box == no running
-        // transition) rather than reversing an in-progress one — reversing
-        // a transition that's barely started is a near-zero-duration no-op.
-        cards.forEach((el) => el.classList.remove("in-view"));
-
-        $$(".services-tab").forEach((b) => {
-          const on = b === btn;
-          b.classList.toggle("active", on);
-          b.setAttribute("aria-selected", on);
-        });
-        $$(".services-panel").forEach((p) => p.classList.toggle("active", p.getAttribute("data-cat-panel") === activeCategoryId));
-        staggerReveal(cards, { step: 90 });
-      });
+      btn.addEventListener("click", () => switchCategory(btn.getAttribute("data-cat")));
     });
 
     $$(".subcategory-header").forEach((header) => {
       header.addEventListener("click", () => {
-        header.closest(".subcategory-card").classList.toggle("open");
+        const card = header.closest(".subcategory-card");
+        setCardOpen(card, !card.classList.contains("open"));
       });
     });
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — sliding tab indicator
+     --------------------------------------------------------------------- */
+  let indicatorReady = false;
+
+  function positionTabIndicator(activeBtn) {
+    const tabsEl = $("#servicesTabs");
+    const indicator = $("#tabIndicator");
+    if (!tabsEl || !indicator || !activeBtn) return;
+
+    const tabsRect = tabsEl.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+    const x = btnRect.left - tabsRect.left + tabsEl.scrollLeft;
+    const y = btnRect.top - tabsRect.top;
+
+    // Width/height are assigned directly rather than transitioned — the
+    // motion rules call for animating transform/opacity only, so a pill
+    // moving to a wider/narrower tab snaps to the new size and slides via
+    // translate, instead of animating width (which is what actually costs
+    // layout on cheap phones).
+    indicator.style.width = btnRect.width + "px";
+    indicator.style.height = btnRect.height + "px";
+
+    if (!indicatorReady) {
+      indicator.classList.add("no-anim");
+      indicator.style.transform = `translate(${x}px, ${y}px)`;
+      void indicator.offsetWidth;
+      indicator.classList.remove("no-anim");
+      indicatorReady = true;
+    } else {
+      indicator.style.transform = `translate(${x}px, ${y}px)`;
+    }
+  }
+
+  function updateTabsUI() {
+    $$(".services-tab").forEach((b) => {
+      const on = b.getAttribute("data-cat") === activeCategoryId;
+      b.classList.toggle("active", on);
+      b.setAttribute("aria-selected", on);
+      if (on) positionTabIndicator(b);
+    });
+  }
+
+  function scrollActiveTabIntoView() {
+    const btn = $(`.services-tab[data-cat="${activeCategoryId}"]`);
+    if (!btn) return;
+    btn.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", inline: "center", block: "nearest" });
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — staggered row entrance
+     --------------------------------------------------------------------- */
+  function staggerRows(rows) {
+    const list = Array.from(rows || []).filter((r) => !r.classList.contains("hidden-by-search"));
+    if (!list.length) return;
+    const reduced = prefersReducedMotion();
+    const stepMs = getCssNumber("--row-stagger-step", 50);
+    const maxMs = getCssNumber("--row-stagger-max", 600);
+    const step = list.length > 1 ? Math.min(stepMs, maxMs / (list.length - 1)) : 0;
+
+    list.forEach((el, i) => {
+      el.classList.remove("row-in");
+      el.style.transitionDelay = reduced ? "0ms" : Math.round(i * step) + "ms";
+      el.style.willChange = "transform, opacity";
+    });
+
+    // Force a reflow so the removal above commits before "row-in" is
+    // re-added — see staggerReveal()'s comment for why this matters.
+    void list[0].offsetHeight;
+
+    requestAnimationFrame(() => {
+      list.forEach((el) => el.classList.add("row-in"));
+      const rowDuration = getCssNumber("--row-duration", 380);
+      const total = Math.round((list.length - 1) * step) + rowDuration + 60;
+      setTimeout(() => {
+        list.forEach((el) => {
+          el.style.transitionDelay = "";
+          el.style.willChange = "";
+        });
+      }, total);
+    });
+  }
+
+  function revealOpenRows(panel) {
+    if (!panel) return;
+    $$(".subcategory-card.open", panel).forEach((card) => staggerRows($$(".service-row", card)));
+  }
+
+  // Instantly (no stagger) marks a card's rows visible — used when a card
+  // is opened as a side effect of the search filter, where a cascading
+  // entrance would just add lag to every keystroke.
+  function ensureRowsVisible(card) {
+    $$(".service-row", card).forEach((r) => {
+      r.style.transitionDelay = "";
+      r.classList.add("row-in");
+    });
+  }
+
+  function setCardOpen(card, open, { animateRows = true } = {}) {
+    if (!card) return;
+    const wasOpen = card.classList.contains("open");
+    card.classList.toggle("open", open);
+    if (open && !wasOpen) {
+      if (animateRows) staggerRows($$(".service-row", card));
+      else ensureRowsVisible(card);
+    }
+  }
+
+  // Makes subcategory-card headers in the incoming panel appear instantly,
+  // bypassing their own reveal-item transition. The panel itself carries
+  // the entrance motion on a tab switch (see switchCategory), so the cards
+  // riding along with it shouldn't also run their own separate fade-up —
+  // that would look like two animations fighting each other.
+  function revealCardsInstant(panel) {
+    $$(".subcategory-card", panel).forEach((c) => {
+      c.style.transition = "none";
+      c.classList.add("in-view");
+      void c.offsetHeight;
+      c.style.transition = "";
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — directional category switch
+     --------------------------------------------------------------------- */
+  let switchToken = 0;
+  const pendingSwitchTimers = [];
+
+  function resetPanelMotion(panel) {
+    if (!panel) return;
+    panel.classList.remove("slide-out", "slide-in", "slide-in-start");
+    panel.style.willChange = "";
+  }
+
+  function switchCategory(newId) {
+    if (!newId || newId === activeCategoryId) return;
+    const newPanel = $(`.services-panel[data-cat-panel="${newId}"]`);
+    if (!newPanel) return;
+
+    activeCategoryId = newId;
+    const myToken = ++switchToken;
+
+    // Cancel anything left over from an interrupted switch so it can't
+    // fire stale callbacks against this new one.
+    pendingSwitchTimers.forEach(clearTimeout);
+    pendingSwitchTimers.length = 0;
+
+    updateTabsUI();
+    scrollActiveTabIntoView();
+
+    // Whichever panel is currently visible in the DOM — including one
+    // still mid-exit from a rapid previous click — is the real "old" one.
+    // Any other stray .active panel (shouldn't normally happen, but a fast
+    // double-click could race here) is force-settled with no animation.
+    const oldPanel = $$(".services-panel.active").find((p) => p !== newPanel) || null;
+    $$(".services-panel").forEach((p) => {
+      if (p !== oldPanel && p !== newPanel && p.classList.contains("active")) {
+        p.classList.remove("active");
+        resetPanelMotion(p);
+      }
+    });
+
+    const oldCatId = oldPanel ? oldPanel.getAttribute("data-cat-panel") : null;
+    const oldIndex = SERVICES_DATA.findIndex((c) => c.id === oldCatId);
+    const newIndex = SERVICES_DATA.findIndex((c) => c.id === newId);
+    const dir = newIndex >= oldIndex ? 1 : -1;
+
+    revealCardsInstant(newPanel);
+
+    const reduced = prefersReducedMotion();
+    if (reduced || !oldPanel || oldPanel === newPanel) {
+      if (oldPanel && oldPanel !== newPanel) {
+        oldPanel.classList.remove("active");
+        resetPanelMotion(oldPanel);
+      }
+      resetPanelMotion(newPanel);
+      newPanel.classList.add("active");
+      revealOpenRows(newPanel);
+      return;
+    }
+
+    oldPanel.style.setProperty("--slide-dir", dir);
+    oldPanel.style.willChange = "transform, opacity";
+    oldPanel.classList.add("slide-out");
+
+    const finishExit = () => {
+      if (myToken !== switchToken) return;
+      oldPanel.classList.remove("active");
+      resetPanelMotion(oldPanel);
+      beginEnter();
+    };
+    oldPanel.addEventListener("transitionend", function onExitEnd(e) {
+      if (e.target !== oldPanel) return;
+      oldPanel.removeEventListener("transitionend", onExitEnd);
+      finishExit();
+    });
+    pendingSwitchTimers.push(setTimeout(finishExit, getCssNumber("--motion-exit-duration", 160) + 80));
+
+    function beginEnter() {
+      if (myToken !== switchToken) return;
+      newPanel.style.setProperty("--slide-dir", dir);
+      newPanel.style.willChange = "transform, opacity";
+      newPanel.classList.add("active", "slide-in-start");
+      void newPanel.offsetWidth;
+
+      requestAnimationFrame(() => {
+        if (myToken !== switchToken) return;
+        newPanel.classList.remove("slide-in-start");
+        newPanel.classList.add("slide-in");
+        revealOpenRows(newPanel);
+      });
+
+      const finishEnter = () => {
+        if (myToken !== switchToken) return;
+        resetPanelMotion(newPanel);
+      };
+      newPanel.addEventListener("transitionend", function onEnterEnd(e) {
+        if (e.target !== newPanel) return;
+        newPanel.removeEventListener("transitionend", onEnterEnd);
+        finishEnter();
+      });
+      pendingSwitchTimers.push(setTimeout(finishEnter, getCssNumber("--motion-duration", 300) + 100));
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — keyboard tab navigation (Left/Right/Home/End) and mobile
+     swipe. Both funnel through switchCategory() so they animate exactly
+     like a click.
+     --------------------------------------------------------------------- */
+  function initTabsKeyboardNav() {
+    const tabsEl = $("#servicesTabs");
+    if (!tabsEl) return;
+    tabsEl.addEventListener("keydown", (e) => {
+      if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
+      const tabs = $$(".services-tab").filter((b) => b.style.display !== "none");
+      const currentIndex = tabs.indexOf(document.activeElement);
+      if (currentIndex === -1) return;
+      e.preventDefault();
+
+      const rtl = document.documentElement.getAttribute("dir") === "rtl";
+      let nextIndex = currentIndex;
+      if (e.key === "Home") nextIndex = 0;
+      else if (e.key === "End") nextIndex = tabs.length - 1;
+      else {
+        const forward = (e.key === "ArrowRight") !== rtl;
+        nextIndex = forward ? Math.min(currentIndex + 1, tabs.length - 1) : Math.max(currentIndex - 1, 0);
+      }
+
+      const nextTab = tabs[nextIndex];
+      if (nextTab && nextTab !== document.activeElement) {
+        nextTab.focus();
+        switchCategory(nextTab.getAttribute("data-cat"));
+      }
+    });
+  }
+
+  function initServicesSwipe() {
+    const panelsEl = $("#servicesPanels");
+    if (!panelsEl) return;
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let axis = null; // "h" | "v" | null (undecided)
+
+    panelsEl.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      tracking = true;
+      axis = null;
+    }, { passive: true });
+
+    panelsEl.addEventListener("touchmove", (e) => {
+      if (!tracking) return;
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (axis === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+        axis = Math.abs(dx) > Math.abs(dy) * 1.3 ? "h" : "v";
+      }
+      // Only steal the gesture once it's clearly horizontal — vertical and
+      // undecided gestures are left alone so page scroll is never hijacked.
+      if (axis === "h" && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    function onTouchEnd(e) {
+      if (!tracking) return;
+      tracking = false;
+      if (axis !== "h") return;
+      const dx = e.changedTouches[0].clientX - startX;
+      const SWIPE_THRESHOLD = 48;
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+
+      const idx = SERVICES_DATA.findIndex((c) => c.id === activeCategoryId);
+      // Physical swipe direction, same convention as OS-level carousels:
+      // swipe left -> next category, swipe right -> previous, regardless
+      // of text direction.
+      if (dx < 0 && idx < SERVICES_DATA.length - 1) switchCategory(SERVICES_DATA[idx + 1].id);
+      else if (dx > 0 && idx > 0) switchCategory(SERVICES_DATA[idx - 1].id);
+    }
+    panelsEl.addEventListener("touchend", onTouchEnd);
+    panelsEl.addEventListener("touchcancel", () => { tracking = false; axis = null; });
   }
 
   function filterServices(query) {
@@ -258,7 +573,10 @@
         card.style.display = subHasMatch ? "" : "none";
         if (subHasMatch) {
           categoryHasMatch = true;
-          if (q) card.classList.add("open");
+          // No stagger while the visitor is actively typing — a card
+          // opened by a search match should just be there on the next
+          // keystroke, not add animation lag to the input.
+          if (q) setCardOpen(card, true, { animateRows: false });
         }
       });
 
@@ -278,12 +596,10 @@
         });
         if (firstMatch) {
           activeCategoryId = firstMatch.id;
-          $$(".services-tab").forEach((b) => {
-            const on = b.getAttribute("data-cat") === activeCategoryId;
-            b.classList.toggle("active", on);
-            b.setAttribute("aria-selected", on);
-          });
+          updateTabsUI();
           $$(".services-panel").forEach((p) => p.classList.toggle("active", p.getAttribute("data-cat-panel") === activeCategoryId));
+          const jumpedPanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
+          if (jumpedPanel) revealOpenRows(jumpedPanel);
         }
       }
     }
@@ -460,6 +776,7 @@
     const activePanel = $(".services-panel.active");
     if (activePanel && isInViewport(activePanel)) {
       staggerReveal($$(".subcategory-card", activePanel), { step: 90 });
+      revealOpenRows(activePanel);
     }
   }
 
@@ -488,11 +805,29 @@
       const io = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            staggerReveal($$(".subcategory-card", $(".services-panel.active")), { step: 90 });
+            const activePanel = $(".services-panel.active");
+            staggerReveal($$(".subcategory-card", activePanel), { step: 90 });
+            revealOpenRows(activePanel);
           }
         });
       }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
       io.observe(panelsEl);
+    }
+  }
+
+  /* ---------------------------------------------------------------------
+     Tab indicator — recalculate whenever the layout it's measured against
+     could have changed: viewport resize, or web fonts swapping in (which
+     can reflow button widths after the indicator's first measurement).
+     --------------------------------------------------------------------- */
+  function initTabIndicatorSync() {
+    let resizeRaf = null;
+    window.addEventListener("resize", () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => positionTabIndicator($(".services-tab.active")));
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => positionTabIndicator($(".services-tab.active")));
     }
   }
 
@@ -512,6 +847,9 @@
     setLanguage(currentLang);
     initScrollReveal();
     initStaggerGroups();
+    initTabsKeyboardNav();
+    initServicesSwipe();
+    initTabIndicatorSync();
   }
 
   document.addEventListener("DOMContentLoaded", init);

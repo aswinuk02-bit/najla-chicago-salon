@@ -1,7 +1,7 @@
-# AMEERA Al Hayat Beauty Salon — Website
+# Najla Chicago Salon — Website
 
-A lightweight, static, bilingual (English / Arabic) website for AMEERA Al Hayat
-Beauty Salon (صالون الأميرة الحياة للتجميل). Built with plain HTML, CSS and
+A lightweight, static, bilingual (English / Arabic) website for Najla Chicago
+Salon (صالون نجلاء شيكاغو). Built with plain HTML, CSS and
 vanilla JavaScript — no build step, no framework, no dependencies.
 
 ## Running it locally
@@ -72,52 +72,55 @@ build configuration (no build command, output directory = project root).
 Section/category background photos are wired up in `css/style.css` (the Hero
 background) and via CSS attribute selectors keyed to the Services tab id
 (`.services-panel[data-cat-panel="…"]`). All of them read from
-`assets/images/optimized/`, not the originals, since the originals you
-downloaded were 1–5MB each — too heavy to ship directly as backgrounds or
-inline gallery images. All seven photos (plus the logo) were resized to a
-sensible max dimension (512px for the logo, 1600–2000px on the long edge for
-photos) and re-compressed to JPEG quality 78–88, which brought the hero image
-alone from 3.8MB down to ~160KB with no visible quality loss at the sizes
-they're displayed. The originals are left untouched in `assets/images/` in
-case you want to re-crop or re-export them yourself later.
+`assets/images/optimized/`, not the originals, since the originals you drop
+into `assets/images/` typically run 1–11MB each — too heavy to ship directly
+as backgrounds or inline gallery images. Each one is resized to a max
+dimension of 1800px on the long edge and re-compressed to JPEG quality 82,
+which keeps every optimized file under ~300KB with no visible quality loss
+at the sizes they're displayed. The originals are left untouched in
+`assets/images/` in case you want to re-crop or re-export them yourself
+later.
 
 | File used | Mapped to | Notes |
 |---|---|---|
-| `hair-saloon-1.jpg` | **Hero** background (`#home`) | The more editorial/spacious of the two hair shots — picked for the negative space it leaves for the hero heading. Preloaded via `<link rel="preload">` so it doesn't flash in late. |
-| `nail-salon-1.jpg` | **Nails** tab background (Services → Nails) | Even, neutral backdrop behind the manicured hand — reads well tinted pink behind the white subcategory cards. |
-| `massage-1.jpg` | **Massage** and **Moroccan Bath** tabs background | Only one spa/massage-style photo was suitable as a full-bleed tab background (the second, `massage-2.jpg`, is black-and-white with a male subject — used in the Gallery instead, see below). Both the Massage and Moroccan Bath tabs currently share this one image; swap in a second photo per tab later if you'd like them visually distinct. |
-| `hair-saloon-2.jpg` | **About** section photo frame | The framed portrait image next to the About text. |
+| `banner-image.jpg` | **Hero** background (`#home`) and **Services & Price List** banner | Dark, editorial hair shot with the subject off to the right — `background-position` is biased toward that side (`68% …`) so she stays in frame on both wide and narrow viewports. Preloaded via `<link rel="preload">` so it doesn't flash in late. |
+| `hair-image.jpg` | **About** section photo frame | Salon-interior shot of a stylist finishing a client's hair — the framed portrait image next to the About text. |
+| `hair-2.jpg` | **Hair** tab background (Services → Hair) | Hair-wash-at-the-basin shot. |
+| `waxing.jpg` | **Waxing & Threading** tab background | |
+| `skin.jpg` | **Skin** tab background (Services → Skin) | Facial treatment close-up. |
+| `nail-salon-1.jpg` | **Nails** tab background (Services → Nails) | Even, neutral backdrop behind the manicured hand. |
+| `eyelash-eyebrow.jpg` | **Eyelash & Eyebrow** tab background | |
+| `massage-1.jpg` | **Massage** and **Moroccan Bath** tabs background | Both tabs currently share this one image; swap in a second photo per tab later if you'd like them visually distinct. |
+| `henna.jpg` | **Henna** tab background | |
 
-Every downloaded photo is now in use somewhere on the site — none are left
-sitting unused. The remaining four (`hair-saloon-2.jpg`, `massage-2.jpg`,
-`nail-salon-2.jpg`, `nail-salon-3.jpg`) power the **Gallery** grid alongside
-the three background photos above; see `CONFIG.galleryImages` in
-`js/main.js` to add, remove or reorder them.
+Every Services category now has its own tab background, so
+`.services-panel[data-cat-panel="…"]::before` in `css/style.css` applies to
+every panel rather than an opt-in list of category ids — see the "Category
+photo backgrounds" comment there.
 
-**No facial/skincare or henna photos were included** in the downloaded batch,
-so the About section and the Henna Design services tab still use their
-original solid/gradient backgrounds untouched, per the "leave as-is if no
-matching image" rule. Drop a facial/skincare shot in as
-`assets/images/facial-1.jpg` and a henna shot as `assets/images/henna-1.jpg`
-(then compress them the same way — see below) and I can wire up the same
-tinted-photo treatment for those two the next time you ask.
+Every photo currently in `assets/images/optimized/` is in use somewhere on
+the site. `nail-salon-2.jpg`, `nail-salon-3.jpg`, `massage-2.jpg`, plus a
+second appearance of every category photo above, power the **Gallery** grid
+too — see `CONFIG.galleryImages` in `js/main.js` to add, remove or reorder
+them.
 
 **If you add more/replace these images:** re-run them through a compressor
-(e.g. [squoosh.app](https://squoosh.app), target JPEG ~75–80 quality, longest
+(e.g. [squoosh.app](https://squoosh.app), target JPEG ~75–85 quality, longest
 edge ~1800–2000px for a full-bleed background) before dropping them into
 `assets/images/optimized/` — shipping multi-MB originals directly as CSS
 backgrounds will noticeably slow the page down, especially on mobile.
 
 ## Scroll animations & backgrounds — how it works
 
-- **Hero**: `css/style.css` → `.hero-bg` layers a directional pink gradient
-  over `assets/images/optimized/hair-saloon-1.jpg`, `background-size: cover`,
-  and `background-attachment: fixed` on desktop (disabled — falls back to
-  `scroll` — under 768px, since fixed backgrounds cause scroll jank on
-  iOS/Android).
-- **Services category backgrounds**: applied per-tab via
-  `.services-panel[data-cat-panel="nails|massage|moroccan-bath"]::before` in
-  `css/style.css`. Because inactive tab panels stay `display:none` until
+- **Hero**: `css/style.css` → `.hero-bg` layers a directional dark/gold
+  gradient over `assets/images/optimized/banner-image.jpg`,
+  `background-size: cover`, and `background-attachment: fixed` on desktop
+  (disabled — falls back to `scroll` — under 768px, since fixed backgrounds
+  cause scroll jank on iOS/Android).
+- **Services category backgrounds**: applied to every panel via
+  `.services-panel::before` in `css/style.css`, with a
+  `.services-panel[data-cat-panel="…"]::before` rule per category picking
+  the actual image. Because inactive tab panels stay `display:none` until
   clicked, the browser doesn't fetch an unused category's background image
   until that tab is actually opened — a free form of lazy-loading with no
   extra JS needed.
