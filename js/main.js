@@ -11,8 +11,8 @@
      CONFIG — edit these placeholders when real business details arrive
      --------------------------------------------------------------------- */
   const CONFIG = {
-    whatsappNumber: "971529527752", // primary — digits only, used for Book Now / hero / FAB / WhatsApp icon
-    whatsappNumberSecondary: "971555965577", // shown as a second contact line, also click-to-WhatsApp
+    whatsappNumber: "971555965577", // primary — digits only, used for Book Now / hero / FAB / WhatsApp icon
+    whatsappNumberSecondary: "971529527752", // shown as a second contact line, also click-to-WhatsApp
     whatsappDefaultMessage: {
       en: "Hi Najla Chicago Salon! I'd like to book an appointment.",
       ar: "مرحبًا صالون نجلاء شيكاغو! أرغب في حجز موعد."

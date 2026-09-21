@@ -34,7 +34,7 @@ build configuration (no build command, output directory = project root).
 | **WhatsApp number** | `js/main.js` → `CONFIG.whatsappNumber` (digits only, with country code, e.g. `"971501234567"`). This single value powers the header "Book Now" button, hero CTA, the floating WhatsApp button, and the WhatsApp icon in Contact/Footer. |
 | **Instagram link** | `js/main.js` → `CONFIG.instagramUrl` |
 | **Address, email, opening hours** | `js/translations.js` → `UI.en.contact` and `UI.ar.contact` (edit both languages) |
-| **Google Map** | `index.html` → the `<iframe src="https://www.google.com/maps?q=...">` inside the Contact section. Replace `Dubai,United+Arab+Emirates` with your exact address or paste an embed URL from Google Maps ("Share" → "Embed a map"). |
+| **Google Map** | `index.html` → the `<iframe src="https://www.google.com/maps?q=...">` inside the Contact section. It currently geocodes the `q=` text query (`Al+Nahda,+Sharjah,+United+Arab+Emirates`) live; swap in a more exact address, or paste a coordinate/embed URL from Google Maps ("Share" → "Embed a map") for a precise pin. |
 | **About text & stats** | `js/translations.js` → `UI.en.about` / `UI.ar.about` |
 | **Testimonials** | `js/translations.js` → `TESTIMONIALS` array |
 | **Gallery photos** | Uses your real photos only (no external placeholder service) — `js/main.js` → `CONFIG.galleryImages`, each entry `{ file, alt: { en, ar } }` pointing at a file in `assets/images/optimized/`. Add/remove/reorder entries there; drop new originals in `assets/images/` and compress them into `assets/images/optimized/` first (see the compression note below). |
