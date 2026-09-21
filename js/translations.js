@@ -10,7 +10,6 @@ const UI = {
     lang: "en",
     siteName: "Najla Chicago Salon",
     siteNameShort: "Najla Chicago",
-    tagline: "Skin • Hair • MakeUp • Nails",
     nav: {
       home: "Home",
       about: "About",
@@ -20,13 +19,22 @@ const UI = {
       bookNow: "Book Now"
     },
     hero: {
-      eyebrow: "Welcome to",
-      title: "Najla Chicago Salon",
-      tagline: "Skin – Hair – MakeUp – Nails",
+      eyebrow: "Skin • Hair • MakeUp • Nails",
+      headlineLine1: "Look Good,",
+      headlineAccent: "Feel",
+      headlineEnd: "Amazing",
       slogan: "Beauty starts with confidence",
-      subtitle: "Where every visit is a moment of care, crafted with premium products, skilled hands and a warm, welcoming space in the heart of Chicago.",
       ctaPrimary: "Book an Appointment",
-      ctaSecondary: "View Services"
+      ctaSecondary: "View Services",
+      sideText: "Chicago's Beauty Destination",
+      scriptLine: "Beauty starts here",
+      scriptSub: "In the heart of Chicago",
+      highlights: {
+        hair: "Hair Styling",
+        skin: "Skin Care",
+        nails: "Nail Care",
+        henna: "Bridal Henna"
+      }
     },
     about: {
       eyebrow: "About Us",
@@ -100,7 +108,6 @@ const UI = {
     lang: "ar",
     siteName: "صالون نجلاء شيكاغو",
     siteNameShort: "نجلاء شيكاغو",
-    tagline: "بشرة • شعر • مكياج • أظافر",
     nav: {
       home: "الرئيسية",
       about: "من نحن",
@@ -110,13 +117,22 @@ const UI = {
       bookNow: "احجزي الآن"
     },
     hero: {
-      eyebrow: "أهلاً بكِ في",
-      title: "صالون نجلاء شيكاغو",
-      tagline: "بشرة – شعر – مكياج – أظافر",
+      eyebrow: "بشرة • شعر • مكياج • أظافر",
+      headlineLine1: "إطلالة مذهلة",
+      headlineAccent: "ثقة",
+      headlineEnd: "لا حدود لها",
       slogan: "الجمال يبدأ بالثقة",
-      subtitle: "حيث تتحول كل زيارة إلى لحظة عناية حقيقية، بمنتجات فاخرة وأيدٍ خبيرة وأجواء دافئة ومرحبة في قلب شيكاغو.",
       ctaPrimary: "احجزي موعدك",
-      ctaSecondary: "استعرضي الخدمات"
+      ctaSecondary: "استعرضي الخدمات",
+      sideText: "وجهة الجمال في شيكاغو",
+      scriptLine: "الجمال يبدأ من هنا",
+      scriptSub: "في قلب شيكاغو",
+      highlights: {
+        hair: "تصفيف الشعر",
+        skin: "العناية بالبشرة",
+        nails: "العناية بالأظافر",
+        henna: "حناء العروس"
+      }
     },
     about: {
       eyebrow: "من نحن",
