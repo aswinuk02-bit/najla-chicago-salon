@@ -51,11 +51,10 @@ const UI = {
     },
     services: {
       eyebrow: "Our Menu",
-      title: "Services & Price List",
-      subtitle: "Explore our full range of treatments, organized by category. Prices are in AED.",
+      title: "Services & Treatments",
+      subtitle: "Explore our full range of treatments, organized by category.",
       searchPlaceholder: "Search a service… e.g. Keratin, Manicure, Facial",
       noResults: "No services match your search. Try another keyword.",
-      priceCurrency: "AED",
       addOn: "Add-on",
       bookThis: "Book This",
       itemsCount: "services"
@@ -149,11 +148,10 @@ const UI = {
     },
     services: {
       eyebrow: "قائمتنا",
-      title: "الخدمات وقائمة الأسعار",
-      subtitle: "تصفحي مجموعتنا الكاملة من الخدمات، مصنّفة حسب الفئة. الأسعار بالدرهم الإماراتي.",
+      title: "الخدمات والعلاجات",
+      subtitle: "تصفحي مجموعتنا الكاملة من الخدمات، مصنّفة حسب الفئة.",
       searchPlaceholder: "ابحثي عن خدمة… مثال: كيراتين، مانيكير، فيشل",
       noResults: "لا توجد خدمات مطابقة لبحثك. جرّبي كلمة أخرى.",
-      priceCurrency: "د.إ",
       addOn: "إضافة",
       bookThis: "احجزي هذه الخدمة",
       itemsCount: "خدمة"

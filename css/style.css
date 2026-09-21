@@ -3,26 +3,39 @@
    ========================================================================= */
 
 :root {
-  /* Black surfaces */
-  --bg:          #0b0908;
-  --bg-alt:      #141009;
-  --surface:     #1e1811;
-  --surface-alt: #2b2318;
-  --border:      rgba(217, 175, 96, 0.16);
+  /* Nude, blush surfaces */
+  --bg:          #fff9f5;
+  --bg-alt:      #ebd9cf;
+  --surface:     #ffffff;
+  --surface-alt: #ebd9cf;
+  --border:      rgba(183, 110, 90, 0.22);
 
-  /* Gold accents */
-  --gold-700: #9c7a2c;
-  --gold-600: #c9a227;
-  --gold-500: #d9b84a;
-  --gold-300: #e8d28f;
-  --gold-100: #f4e8c8;
+  /* Rose gold accents — 700 is the text-safe shade for small text on
+     light surfaces (eyebrows, labels, stat values); 500/600 are for
+     buttons, gradients and larger/decorative use; 300/100 are light
+     accents used on dark surfaces (hero photo, footer). */
+  --gold-700: #8f4f3f;
+  --gold-600: #b76e5a;
+  --gold-500: #c98874;
+  --gold-300: #dba28f;
+  --gold-100: #f3ddd3;
   --gold:     var(--gold-600);
 
   /* Text */
-  --ink:        #f3ead8;
-  --ink-soft:   #c7b593;
-  --black-text: #14100a;
+  --ink:        #3a2b27;
+  --ink-soft:   #7d6a63;
+  --black-text: #2a1512;
   --white:      #ffffff;
+
+  /* Light text for content that sits directly on a dark photo overlay
+     (Hero, Services banner) — kept separate from --ink so the body theme
+     can stay light while those photo sections stay legible. */
+  --on-photo:      #fff9f5;
+  --on-photo-soft: rgba(255, 249, 245, 0.85);
+
+  /* Deliberately dark footer — an anchor of contrast against the light
+     body rather than following --bg-alt. */
+  --footer-bg: #241713;
 
   --font-heading: 'Playfair Display', 'Cormorant', serif;
   --font-body: 'Poppins', sans-serif;
@@ -32,9 +45,9 @@
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 28px;
-  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 4px 16px rgba(139, 79, 63, 0.10);
+  --shadow-md: 0 12px 32px rgba(139, 79, 63, 0.14);
+  --shadow-lg: 0 20px 50px rgba(139, 79, 63, 0.20);
 
   --header-h: 84px;
 
@@ -43,14 +56,19 @@
      banners). Kept light so the photo itself stays clearly visible,
      with just enough dark tint for text contrast. */
   --overlay-dir: to bottom right;
-  --overlay-from: rgba(11, 9, 8, 0.5);
-  --overlay-to: rgba(11, 9, 8, 0.75);
+  --overlay-from: rgba(36, 23, 19, 0.5);
+  --overlay-to: rgba(36, 23, 19, 0.78);
+
+  /* Edge scrim for the Hero, whose photo has no naturally dark side —
+     darkest behind the text column, fading out toward the open, brighter
+     part of the photo. Direction flips with --overlay-dir under RTL. */
+  --hero-scrim-dir: to right;
 
   /* Lighter wash for photo backgrounds that only ever peek through behind
      opaque cards (the Services category panels) — a light tint instead of
      a heavy tint that obscures the photo. */
-  --overlay-light-from: rgba(11, 9, 8, 0.45);
-  --overlay-light-to: rgba(11, 9, 8, 0.65);
+  --overlay-light-from: rgba(36, 23, 19, 0.45);
+  --overlay-light-to: rgba(36, 23, 19, 0.68);
 
   /* Motion — every slide/stagger animation in the Services tabs reads
      these, so the feel can be tuned from one place. Tab-indicator and
@@ -70,6 +88,7 @@
 
 html[dir="rtl"] {
   --overlay-dir: to bottom left;
+  --hero-scrim-dir: to left;
 }
 
 /* ---------- Reset ---------- */
@@ -118,7 +137,7 @@ h1, h2, h3, h4 {
   font-family: var(--font-heading);
   font-weight: 600;
   line-height: 1.25;
-  color: var(--gold-500);
+  color: var(--ink);
 }
 html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3, html[dir="rtl"] h4 {
   font-family: var(--font-arabic);
@@ -134,7 +153,7 @@ section { padding: 96px 0; position: relative; }
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--gold-600);
+  color: var(--gold-700);
   margin-bottom: 10px;
 }
 html[dir="rtl"] .eyebrow { letter-spacing: normal; }
@@ -164,7 +183,7 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .btn-outline {
   background: transparent;
-  color: var(--gold-500);
+  color: var(--gold-700);
   border: 1.5px solid var(--gold-600);
 }
 .btn-outline:hover { background: var(--gold-600); color: var(--black-text); transform: translateY(-2px); }
@@ -176,13 +195,13 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  background: rgba(11, 9, 8, 0.85);
+  background: rgba(255, 249, 245, 0.85);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border-bottom: 1px solid rgba(217, 175, 96, 0.14);
+  border-bottom: 1px solid rgba(183, 110, 90, 0.22);
   transition: box-shadow 0.3s ease;
 }
-.site-header.scrolled { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45); }
+.site-header.scrolled { box-shadow: 0 4px 24px rgba(139, 79, 63, 0.18); }
 
 .header-inner {
   height: 100%;
@@ -198,7 +217,7 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   font-family: var(--font-heading);
   font-weight: 700;
   font-size: 1.15rem;
-  color: var(--gold-500);
+  color: var(--gold-700);
   letter-spacing: 0.01em;
 }
 html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
@@ -226,7 +245,7 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
 .lang-toggle {
   font-weight: 600;
   font-size: 0.85rem;
-  color: var(--gold-500);
+  color: var(--gold-700);
   border: 1.5px solid var(--gold-700);
   border-radius: 50px;
   padding: 8px 16px;
@@ -247,7 +266,7 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
   display: block;
   width: 100%;
   height: 2px;
-  background: var(--gold-500);
+  background: var(--gold-700);
   border-radius: 2px;
   transition: all 0.25s ease;
 }
@@ -272,13 +291,22 @@ html[dir="rtl"] .brand-name { font-family: var(--font-arabic); }
 html[dir="rtl"] .hero { justify-content: flex-end; text-align: right; }
 .hero-bg {
   position: absolute; inset: 0;
-  background-image: url('../assets/images/optimized/banner-image.jpg');
-  background-size: cover;
-  background-position: 68% 25%;
+  background-image:
+    linear-gradient(var(--hero-scrim-dir), rgba(36, 23, 19, 0.72) 0%, rgba(36, 23, 19, 0.4) 38%, rgba(36, 23, 19, 0.08) 62%, rgba(36, 23, 19, 0) 82%),
+    url('../assets/images/optimized/banner-image-4.jpg');
+  /* This photo's subject sits dead-center with plain background on both
+     sides; at plain `cover` there's zero horizontal slack to pan with
+     (width is the constraining dimension), so it's zoomed in a bit here
+     purely to unlock room to shift the hair right, off the text column. */
+  background-size: 165% auto;
+  background-position: 8% 22%;
   background-repeat: no-repeat;
   background-attachment: fixed;
   z-index: 0;
 }
+/* Mirrors the crop so the hair shifts to the opposite side from wherever
+   the text column lands, matching .hero's RTL text flip below. */
+html[dir="rtl"] .hero-bg { background-position: 92% 22%; }
 @media (max-width: 768px) {
   .hero-bg { background-attachment: scroll; }
 }
@@ -333,7 +361,7 @@ html[dir="rtl"] .hero-script-line { font-family: var(--font-arabic); font-style:
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--on-photo);
   margin: 4px 0 0;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
 }
@@ -352,12 +380,12 @@ html[dir="rtl"] .hero-script-line { font-family: var(--font-arabic); font-style:
 .hero-inner .eyebrow,
 .hero-headline,
 .hero-slogan { text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7); }
-.hero-eyebrow { font-size: 0.85rem; letter-spacing: 0.2em; margin-bottom: 18px; }
+.hero-eyebrow { font-size: 0.85rem; letter-spacing: 0.2em; margin-bottom: 18px; color: var(--gold-300); }
 .hero-headline {
   font-size: clamp(2.4rem, 6vw, 4rem);
   line-height: 1.1;
   margin-bottom: 18px;
-  color: var(--ink);
+  color: var(--on-photo);
 }
 .hero-headline-line { display: block; }
 .hero-headline em {
@@ -384,7 +412,7 @@ html[dir="rtl"] .hero-cta-primary svg { transform: scaleX(-1); }
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--on-photo);
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7);
   border-bottom: 1.5px solid var(--gold-500);
   padding-bottom: 3px;
@@ -408,7 +436,7 @@ html[dir="rtl"] .hero-highlight { align-items: flex-end; }
   letter-spacing: 0.06em;
   line-height: 1.4;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--on-photo-soft);
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
 }
 @media (max-width: 640px) {
@@ -465,7 +493,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--gold-500);
+  color: var(--gold-700);
   display: block;
 }
 .stat-box .stat-label {
@@ -498,9 +526,9 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   z-index: 0;
   background-image:
     linear-gradient(var(--overlay-dir), var(--overlay-from), var(--overlay-to)),
-    url('../assets/images/optimized/banner-image.jpg');
+    url('../assets/images/optimized/banner-image-4.jpg');
   background-size: cover;
-  background-position: 68% 25%;
+  background-position: 50% 15%;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
@@ -513,6 +541,11 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   z-index: 1;
   text-shadow: 0 2px 20px rgba(0, 0, 0, 0.7);
 }
+/* This heading sits on the photo banner, not the light body, so it needs
+   the on-photo text colors rather than the ones the body sections use. */
+.services .section-heading .eyebrow { color: var(--gold-300); }
+.services .section-heading h2 { color: var(--on-photo); }
+.services .section-heading .section-subtitle { color: var(--on-photo-soft); }
 
 .services-search {
   position: relative;
@@ -532,11 +565,11 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
 }
 .services-search input::placeholder { color: var(--ink-soft); }
 html[dir="rtl"] .services-search input { padding: 14px 48px 14px 20px; }
-.services-search input:focus { border-color: var(--gold-600); box-shadow: 0 0 0 4px rgba(201, 162, 39, 0.15); }
+.services-search input:focus { border-color: var(--gold-600); box-shadow: 0 0 0 4px rgba(183, 110, 90, 0.18); }
 .search-icon {
   position: absolute;
   left: 18px; top: 50%; transform: translateY(-50%);
-  color: var(--gold-500);
+  color: var(--gold-700);
   pointer-events: none;
 }
 html[dir="rtl"] .search-icon { left: auto; right: 18px; }
@@ -581,7 +614,7 @@ html[dir="rtl"] .search-icon { left: auto; right: 18px; }
   gap: 8px;
   flex-shrink: 0;
 }
-.services-tab:hover { border-color: var(--gold-600); color: var(--gold-500); }
+.services-tab:hover { border-color: var(--gold-600); color: var(--gold-700); }
 .services-tab.active {
   background: transparent;
   border-color: transparent;
@@ -639,155 +672,139 @@ html[dir="rtl"] .search-icon { left: auto; right: 18px; }
   }
 }
 
-/* Category photo backgrounds — every category now has its own photo, so
-   these rules apply to all Services panels rather than an opt-in list.
-   Image fetch is naturally deferred by the browser until each tab panel
-   leaves display:none and becomes active. */
-.services-panel {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  padding: 56px 22px 22px;
-  box-shadow: var(--shadow-md);
-}
-.services-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
-.services-panel[data-cat-panel="hair"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/hair-2.jpg');
-}
-.services-panel[data-cat-panel="waxing-threading"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/waxing.jpg');
-}
-.services-panel[data-cat-panel="skin"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/skin.jpg');
-}
-.services-panel[data-cat-panel="nails"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/nail-salon-1.jpg');
-}
-.services-panel[data-cat-panel="lash-brow"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/eyelash-eyebrow.jpg');
-}
-.services-panel[data-cat-panel="massage"]::before,
-.services-panel[data-cat-panel="moroccan-bath"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/massage-1.jpg');
-}
-.services-panel[data-cat-panel="henna"]::before {
-  background-image: linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)),
-    url('../assets/images/optimized/henna.jpg');
-}
-.services-panel > * {
-  position: relative;
-  z-index: 1;
-}
-@media (max-width: 768px) {
-  .services-panel::before { background-attachment: scroll; }
-  .services-panel { padding: 36px 14px 14px; }
-}
-
-.subcategory-card {
+/* Services menu — a persistent sidebar of subcategory names down the left,
+   the selected one's items shown in the panel on the right (like a
+   restaurant digital menu or a dashboard nav), replacing the previous
+   stacked accordion. One category's worth of subcategories/services;
+   .services-panel above still handles the top-level category slide. */
+.services-menu {
+  display: grid;
+  grid-template-columns: 240px 1fr;
   background: var(--surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
-  overflow: hidden;
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
-.subcategory-header {
-  width: 100%;
+
+.services-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 18px 12px;
+  background: var(--surface-alt);
+  border-inline-end: 1px solid var(--border);
+}
+.sidebar-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 26px;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: 1.15rem;
-  color: var(--gold-500);
-  background: var(--surface-alt);
-  text-align: start;
-}
-html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weight: 700; }
-.subcategory-header .count {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.78rem;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
   color: var(--ink-soft);
-  background: var(--surface);
-  padding: 3px 12px;
-  border-radius: 50px;
-  margin-inline-start: 12px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-align: start;
+  transition: background 0.2s ease, color 0.2s ease;
 }
-.subcategory-header .chevron {
-  margin-inline-start: auto;
-  transition: transform 0.25s ease;
-  color: var(--gold-500);
+html[dir="rtl"] .sidebar-item { font-family: var(--font-arabic); }
+.sidebar-item:hover { background: rgba(255, 255, 255, 0.6); color: var(--ink); }
+.sidebar-item.active {
+  background: var(--surface);
+  color: var(--gold-700);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.sidebar-item-name { flex: 1; }
+.sidebar-item-count {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--surface-alt);
+  padding: 2px 9px;
+  border-radius: 50px;
   flex-shrink: 0;
 }
-.subcategory-card.open .chevron { transform: rotate(180deg); }
+.sidebar-item.active .sidebar-item-count { background: var(--gold-100); color: var(--gold-700); }
+/* Same pitfall as .hero-video-toggle: our own unconditional `display:flex`
+   above has the same specificity as the UA `[hidden] { display: none }`
+   and would win on source order, defeating the search filter's use of the
+   `hidden` attribute to remove non-matching subcategories from the list. */
+.sidebar-item[hidden] { display: none; }
 
-.subcategory-body {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease;
+.services-content {
+  padding: 8px 30px 26px;
+  min-width: 0;
 }
-.subcategory-card.open .subcategory-body { max-height: 4000px; }
-
-.service-list { padding: 8px 26px 22px; }
-.service-row {
+.sub-panel { display: none; }
+.sub-panel.active { display: block; }
+.sub-panel-header {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  padding: 22px 0 14px;
+  border-bottom: 1px solid var(--surface-alt);
+  margin-bottom: 6px;
+}
+.sub-panel-title { font-size: 1.15rem; margin: 0; }
+html[dir="rtl"] .sub-panel-title { font-family: var(--font-arabic); font-weight: 700; }
+.sub-panel-count {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .services-menu { grid-template-columns: 1fr; }
+  .services-sidebar {
+    flex-direction: row;
+    overflow-x: auto;
+    border-inline-end: none;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .services-sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-item { flex-shrink: 0; }
+  .services-content { padding: 4px 18px 20px; }
+}
+
+/* Grid rather than a single column — without a price pinned to the right
+   edge, one item per full-width row would leave most of the row empty. */
+.service-list {
+  padding: 4px 0 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0 28px;
+}
+.service-row {
+  display: flex;
+  align-items: center;
   padding: 13px 0;
-  border-bottom: 1px dashed rgba(217, 175, 96, 0.18);
+  border-bottom: 1px dashed rgba(183, 110, 90, 0.25);
   opacity: 0;
   transform: translateY(var(--row-slide-distance));
   transition: opacity var(--row-duration) var(--motion-ease), transform var(--row-duration) var(--motion-ease);
 }
 .service-row.row-in { opacity: 1; transform: translateY(0); }
-.service-row:last-child { border-bottom: none; }
 @media (prefers-reduced-motion: reduce) {
   .service-row { transition: none; opacity: 1; transform: none; }
 }
-.service-name { color: var(--ink); font-size: 0.96rem; flex: 1; }
+.service-name { color: var(--ink); font-size: 0.96rem; }
 .service-name .addon-tag {
   display: inline-block;
   font-size: 0.68rem;
   font-weight: 600;
-  color: var(--gold-500);
-  border: 1px solid var(--gold-500);
+  color: var(--gold-700);
+  border: 1px solid var(--gold-700);
   border-radius: 50px;
   padding: 1px 8px;
   margin-inline-end: 8px;
   vertical-align: middle;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-}
-.service-dots {
-  flex: 1;
-  border-bottom: 1px dotted rgba(217, 175, 96, 0.25);
-  margin: 0 8px;
-  min-width: 20px;
-  display: none;
-}
-.service-price {
-  font-weight: 700;
-  color: var(--gold-500);
-  white-space: nowrap;
-  font-size: 0.96rem;
 }
 .service-row.hidden-by-search { display: none; }
 
@@ -835,9 +852,9 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
 }
-.testimonial-stars { color: var(--gold-500); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
+.testimonial-stars { color: var(--gold-700); font-size: 1rem; margin-bottom: 14px; letter-spacing: 2px; }
 .testimonial-text { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 18px; font-style: italic; }
-.testimonial-name { font-weight: 600; color: var(--gold-500); }
+.testimonial-name { font-weight: 600; color: var(--gold-700); }
 
 /* ---------- Contact ---------- */
 .contact-grid {
@@ -869,14 +886,14 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 .contact-item h4 { font-size: 0.95rem; margin-bottom: 4px; }
 .contact-item p { color: var(--ink-soft); font-size: 0.92rem; }
 .phone-link { transition: color 0.2s ease; }
-.phone-link:hover { color: var(--gold-500); text-decoration: underline; }
+.phone-link:hover { color: var(--gold-700); text-decoration: underline; }
 .footer-contact .phone-link:hover { color: var(--gold-300); }
 
 .hours-block { margin: 24px 0; padding-top: 20px; border-top: 1px solid var(--surface-alt); }
 .hours-block h4 { margin-bottom: 12px; font-size: 0.95rem; }
 .hours-table { width: 100%; border-collapse: collapse; }
 .hours-table td { padding: 6px 0; font-size: 0.9rem; color: var(--ink-soft); }
-.hours-table td:last-child { text-align: end; font-weight: 600; color: var(--gold-500); }
+.hours-table td:last-child { text-align: end; font-weight: 600; color: var(--gold-700); }
 
 .social-icons { display: flex; gap: 12px; }
 .social-icon {
@@ -884,7 +901,7 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
   display: flex; align-items: center; justify-content: center;
   border-radius: 50%;
   background: var(--surface-alt);
-  color: var(--gold-500);
+  color: var(--gold-700);
   transition: all 0.2s ease;
 }
 .social-icon:hover { background: var(--gold-600); color: var(--black-text); transform: translateY(-2px); }
@@ -899,7 +916,7 @@ html[dir="rtl"] .subcategory-header { font-family: var(--font-arabic); font-weig
 }
 
 /* ---------- Footer ---------- */
-.site-footer { background: var(--bg-alt); color: rgba(243, 234, 216, 0.85); padding-top: 72px; }
+.site-footer { background: var(--footer-bg); color: rgba(255, 249, 245, 0.85); padding-top: 72px; }
 .footer-inner {
   display: grid;
   grid-template-columns: 1.3fr 1fr 1fr;
@@ -1044,8 +1061,8 @@ html[dir="rtl"] .call-fab { right: auto; left: 26px; }
   .footer-links, .footer-contact { text-align: center; }
   .footer-contact .social-icons { justify-content: center; }
   .footer-bottom-inner { justify-content: center; text-align: center; }
-  .subcategory-header { padding: 16px 18px; font-size: 1rem; }
-  .service-list { padding: 4px 18px 16px; }
+  .sub-panel-title { font-size: 1rem; }
+  .service-list { grid-template-columns: 1fr; }
   .contact-card { padding: 26px; }
   .map-frame { height: 320px; }
 }

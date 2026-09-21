@@ -171,20 +171,22 @@
   }
 
   /* ---------------------------------------------------------------------
-     Services: tabs + accordion + search
+     Services: category tabs + a sidebar/content "menu" per category
+     (subcategory names listed down the left, selected one's items shown
+     on the right) + search.
      --------------------------------------------------------------------- */
   let activeCategoryId = SERVICES_DATA[0].id;
-
-  function formatPrice(price) {
-    const currency = UI[currentLang].services.priceCurrency;
-    if (typeof price === "string") {
-      return currentLang === "ar" ? `${price} ${currency}` : `${currency} ${price}`;
-    }
-    return currentLang === "ar" ? `${price} ${currency}` : `${currency} ${price}`;
-  }
+  // Remembers which subcategory was last selected per top-level category
+  // (keyed by category id), so switching tabs and back doesn't reset it.
+  const activeSubIndexByCat = {};
 
   function isAddOn(name) {
     return /^add\s*on|^إضافة/i.test(name.trim());
+  }
+
+  function getActiveSubIndex(cat) {
+    const idx = activeSubIndexByCat[cat.id];
+    return (typeof idx === "number" && idx < cat.subcategories.length) ? idx : 0;
   }
 
   function renderServices() {
@@ -200,39 +202,46 @@
       </button>
     `).join("");
 
-    panelsEl.innerHTML = SERVICES_DATA.map((cat, catIndex) => `
+    panelsEl.innerHTML = SERVICES_DATA.map((cat) => {
+      const activeSub = getActiveSubIndex(cat);
+      return `
       <div class="services-panel${cat.id === activeCategoryId ? " active" : ""}" data-cat-panel="${cat.id}" role="tabpanel">
-        ${cat.subcategories.map((sub, subIndex) => {
-          const openFirst = subIndex === 0;
-          return `
-          <div class="subcategory-card reveal-item${openFirst ? " open" : ""}" data-sub-index="${subIndex}">
-            <button type="button" class="subcategory-header">
-              <span>${sub.name[currentLang]}</span>
-              <span class="count">${sub.items.length} ${UI[currentLang].services.itemsCount}</span>
-              <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
-            <div class="subcategory-body">
-              <div class="service-list">
-                ${sub.items.map((item) => `
-                  <div class="service-row" data-search="${(item.en + " " + item.ar).toLowerCase()}">
-                    <span class="service-name">${isAddOn(item.en) ? `<span class="addon-tag">${UI[currentLang].services.addOn}</span>` : ""}${item[currentLang]}</span>
-                    <span class="service-dots"></span>
-                    <span class="service-price">${formatPrice(item.price)}</span>
-                  </div>
-                `).join("")}
+        <div class="services-menu">
+          <div class="services-sidebar" role="tablist" aria-orientation="vertical" aria-label="${cat.name[currentLang]}">
+            ${cat.subcategories.map((sub, i) => `
+              <button type="button" class="sidebar-item reveal-item${i === activeSub ? " active" : ""}" data-sub-index="${i}" role="tab" aria-selected="${i === activeSub}" aria-controls="subpanel-${cat.id}-${i}" id="subtab-${cat.id}-${i}">
+                <span class="sidebar-item-name">${sub.name[currentLang]}</span>
+                <span class="sidebar-item-count">${sub.items.length}</span>
+              </button>
+            `).join("")}
+          </div>
+          <div class="services-content">
+            ${cat.subcategories.map((sub, i) => `
+              <div class="sub-panel${i === activeSub ? " active" : ""}" data-sub-panel="${i}" id="subpanel-${cat.id}-${i}" role="tabpanel" aria-labelledby="subtab-${cat.id}-${i}">
+                <div class="sub-panel-header">
+                  <h4 class="sub-panel-title">${sub.name[currentLang]}</h4>
+                  <span class="sub-panel-count">${sub.items.length} ${UI[currentLang].services.itemsCount}</span>
+                </div>
+                <div class="service-list">
+                  ${sub.items.map((item) => `
+                    <div class="service-row" data-search="${(item.en + " " + item.ar).toLowerCase()}">
+                      <span class="service-name">${isAddOn(item.en) ? `<span class="addon-tag">${UI[currentLang].services.addOn}</span>` : ""}${item[currentLang]}</span>
+                    </div>
+                  `).join("")}
+                </div>
               </div>
-            </div>
-          </div>`;
-        }).join("")}
-      </div>
-    `).join("");
+            `).join("")}
+          </div>
+        </div>
+      </div>`;
+    }).join("");
 
     bindServiceEvents();
     filterServices($("#serviceSearch") ? $("#serviceSearch").value : "");
 
     positionTabIndicator($(".services-tab.active"));
     const activePanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
-    if (activePanel) revealOpenRows(activePanel);
+    if (activePanel) revealActiveRows(activePanel);
   }
 
   function bindServiceEvents() {
@@ -240,12 +249,63 @@
       btn.addEventListener("click", () => switchCategory(btn.getAttribute("data-cat")));
     });
 
-    $$(".subcategory-header").forEach((header) => {
-      header.addEventListener("click", () => {
-        const card = header.closest(".subcategory-card");
-        setCardOpen(card, !card.classList.contains("open"));
+    $$(".sidebar-item").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const panel = btn.closest(".services-panel");
+        switchSubcategory(panel.getAttribute("data-cat-panel"), parseInt(btn.getAttribute("data-sub-index"), 10));
       });
     });
+
+    // Up/Down (+ Home/End) moves focus within one category's sidebar and
+    // switches to that subcategory, mirroring how Left/Right drives the
+    // top-level category tabs.
+    $$(".services-sidebar").forEach((sidebar) => {
+      sidebar.addEventListener("keydown", (e) => {
+        if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+        const items = $$(".sidebar-item", sidebar);
+        const currentIndex = items.indexOf(document.activeElement);
+        if (currentIndex === -1) return;
+        e.preventDefault();
+
+        let nextIndex = currentIndex;
+        if (e.key === "Home") nextIndex = 0;
+        else if (e.key === "End") nextIndex = items.length - 1;
+        else if (e.key === "ArrowDown") nextIndex = Math.min(currentIndex + 1, items.length - 1);
+        else nextIndex = Math.max(currentIndex - 1, 0);
+
+        const nextItem = items[nextIndex];
+        if (nextItem && nextItem !== document.activeElement) {
+          nextItem.focus();
+          const panel = nextItem.closest(".services-panel");
+          switchSubcategory(panel.getAttribute("data-cat-panel"), nextIndex);
+        }
+      });
+    });
+  }
+
+  // Switches which subcategory is shown within one category's panel — the
+  // sidebar selection and its matching content pane. `animate` is turned
+  // off while the visitor is actively typing in the search box (see
+  // filterServices), where a cascading entrance would just add lag.
+  function switchSubcategory(catId, subIndex, { animate = true } = {}) {
+    activeSubIndexByCat[catId] = subIndex;
+    const panel = $(`.services-panel[data-cat-panel="${catId}"]`);
+    if (!panel) return;
+
+    $$(".sidebar-item", panel).forEach((btn) => {
+      const on = parseInt(btn.getAttribute("data-sub-index"), 10) === subIndex;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on);
+    });
+    $$(".sub-panel", panel).forEach((sp) => {
+      sp.classList.toggle("active", parseInt(sp.getAttribute("data-sub-panel"), 10) === subIndex);
+    });
+
+    if (catId !== activeCategoryId) return; // an inactive tab's panel isn't visible; nothing to animate
+    const activeSubPanel = $(".sub-panel.active", panel);
+    if (!activeSubPanel) return;
+    if (animate) staggerRows($$(".service-row", activeSubPanel));
+    else ensureRowsVisible(activeSubPanel);
   }
 
   /* ---------------------------------------------------------------------
@@ -331,42 +391,35 @@
     });
   }
 
-  function revealOpenRows(panel) {
+  // Staggers in the rows of whichever subcategory is currently active
+  // within a category panel.
+  function revealActiveRows(panel) {
     if (!panel) return;
-    $$(".subcategory-card.open", panel).forEach((card) => staggerRows($$(".service-row", card)));
+    const activeSubPanel = $(".sub-panel.active", panel);
+    if (activeSubPanel) staggerRows($$(".service-row", activeSubPanel));
   }
 
-  // Instantly (no stagger) marks a card's rows visible — used when a card
-  // is opened as a side effect of the search filter, where a cascading
-  // entrance would just add lag to every keystroke.
-  function ensureRowsVisible(card) {
-    $$(".service-row", card).forEach((r) => {
-      r.style.transitionDelay = "";
-      r.classList.add("row-in");
+  // Makes a newly-shown panel's sidebar items appear instantly, bypassing
+  // their own reveal-item transition. The panel itself carries the
+  // entrance motion on a tab switch (see switchCategory), so the items
+  // riding along with it shouldn't also run their own separate fade-up —
+  // that would look like two animations fighting each other.
+  function revealSidebarInstant(panel) {
+    $$(".sidebar-item", panel).forEach((el) => {
+      el.style.transition = "none";
+      el.classList.add("in-view");
+      void el.offsetHeight;
+      el.style.transition = "";
     });
   }
 
-  function setCardOpen(card, open, { animateRows = true } = {}) {
-    if (!card) return;
-    const wasOpen = card.classList.contains("open");
-    card.classList.toggle("open", open);
-    if (open && !wasOpen) {
-      if (animateRows) staggerRows($$(".service-row", card));
-      else ensureRowsVisible(card);
-    }
-  }
-
-  // Makes subcategory-card headers in the incoming panel appear instantly,
-  // bypassing their own reveal-item transition. The panel itself carries
-  // the entrance motion on a tab switch (see switchCategory), so the cards
-  // riding along with it shouldn't also run their own separate fade-up —
-  // that would look like two animations fighting each other.
-  function revealCardsInstant(panel) {
-    $$(".subcategory-card", panel).forEach((c) => {
-      c.style.transition = "none";
-      c.classList.add("in-view");
-      void c.offsetHeight;
-      c.style.transition = "";
+  // Instantly (no stagger) marks a sub-panel's rows visible — used when it's
+  // brought into view as a side effect of the search filter, where a
+  // cascading entrance would just add lag to every keystroke.
+  function ensureRowsVisible(subPanel) {
+    $$(".service-row", subPanel).forEach((r) => {
+      r.style.transitionDelay = "";
+      r.classList.add("row-in");
     });
   }
 
@@ -415,7 +468,7 @@
     const newIndex = SERVICES_DATA.findIndex((c) => c.id === newId);
     const dir = newIndex >= oldIndex ? 1 : -1;
 
-    revealCardsInstant(newPanel);
+    revealSidebarInstant(newPanel);
 
     const reduced = prefersReducedMotion();
     if (reduced || !oldPanel || oldPanel === newPanel) {
@@ -425,7 +478,7 @@
       }
       resetPanelMotion(newPanel);
       newPanel.classList.add("active");
-      revealOpenRows(newPanel);
+      revealActiveRows(newPanel);
       return;
     }
 
@@ -457,7 +510,7 @@
         if (myToken !== switchToken) return;
         newPanel.classList.remove("slide-in-start");
         newPanel.classList.add("slide-in");
-        revealOpenRows(newPanel);
+        revealActiveRows(newPanel);
       });
 
       const finishEnter = () => {
@@ -558,48 +611,71 @@
     const noResultsEl = $("#servicesNoResults");
     let anyVisibleGlobal = false;
 
+    // matchingSubIndexes[cat.id] = indexes of that category's subcategories
+    // that have at least one row matching the query.
+    const matchingSubIndexes = {};
+
     SERVICES_DATA.forEach((cat) => {
       const panel = $(`.services-panel[data-cat-panel="${cat.id}"]`);
       if (!panel) return;
-      let categoryHasMatch = false;
+      const matches = [];
 
-      $$(".subcategory-card", panel).forEach((card) => {
+      cat.subcategories.forEach((sub, i) => {
+        const subPanel = $(`.sub-panel[data-sub-panel="${i}"]`, panel);
+        const sidebarItem = $(`.sidebar-item[data-sub-index="${i}"]`, panel);
+        if (!subPanel) return;
         let subHasMatch = false;
-        $$(".service-row", card).forEach((row) => {
+        $$(".service-row", subPanel).forEach((row) => {
           const match = !q || row.getAttribute("data-search").includes(q);
           row.classList.toggle("hidden-by-search", !match);
           if (match) subHasMatch = true;
         });
-        card.style.display = subHasMatch ? "" : "none";
-        if (subHasMatch) {
-          categoryHasMatch = true;
-          // No stagger while the visitor is actively typing — a card
-          // opened by a search match should just be there on the next
-          // keystroke, not add animation lag to the input.
-          if (q) setCardOpen(card, true, { animateRows: false });
-        }
+        if (sidebarItem) sidebarItem.hidden = Boolean(q) && !subHasMatch;
+        if (subHasMatch) matches.push(i);
       });
+
+      matchingSubIndexes[cat.id] = matches;
+      const categoryHasMatch = matches.length > 0;
 
       const tabBtn = $(`.services-tab[data-cat="${cat.id}"]`);
       if (tabBtn) tabBtn.style.display = q && !categoryHasMatch ? "none" : "";
       if (categoryHasMatch) anyVisibleGlobal = true;
     });
 
-    // If searching and the active tab now has no matches, jump to the first tab that does
+    // Hiding/showing tabs above just reflowed the tab bar — the gold pill
+    // indicator is positioned in JS against measured tab coordinates, so it
+    // needs to be told to re-measure or it's left floating over whatever
+    // used to be there.
+    positionTabIndicator($(".services-tab.active"));
+
     if (q) {
-      const activePanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
-      const activeHasMatch = activePanel && $$(".subcategory-card", activePanel).some((c) => c.style.display !== "none");
-      if (!activeHasMatch) {
-        const firstMatch = SERVICES_DATA.find((cat) => {
-          const panel = $(`.services-panel[data-cat-panel="${cat.id}"]`);
-          return panel && $$(".subcategory-card", panel).some((c) => c.style.display !== "none");
-        });
-        if (firstMatch) {
-          activeCategoryId = firstMatch.id;
+      // If the active category tab now has no matches, jump to the first
+      // one that does — same as before.
+      let targetCatId = activeCategoryId;
+      if (!(matchingSubIndexes[activeCategoryId] || []).length) {
+        const firstMatchCat = SERVICES_DATA.find((cat) => (matchingSubIndexes[cat.id] || []).length);
+        if (firstMatchCat) {
+          targetCatId = firstMatchCat.id;
+          activeCategoryId = targetCatId;
           updateTabsUI();
           $$(".services-panel").forEach((p) => p.classList.toggle("active", p.getAttribute("data-cat-panel") === activeCategoryId));
-          const jumpedPanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
-          if (jumpedPanel) revealOpenRows(jumpedPanel);
+        }
+      }
+
+      // Within whichever category ends up active, make sure the selected
+      // subcategory (sidebar item + content pane) is one that actually has
+      // a match — jumping to the first one that does, no stagger while
+      // typing.
+      const targetMatches = matchingSubIndexes[targetCatId] || [];
+      const targetCat = SERVICES_DATA.find((c) => c.id === targetCatId);
+      if (targetMatches.length) {
+        const currentSub = targetCat ? getActiveSubIndex(targetCat) : 0;
+        if (!targetMatches.includes(currentSub)) {
+          switchSubcategory(targetCatId, targetMatches[0], { animate: false });
+        } else {
+          const panel = $(`.services-panel[data-cat-panel="${targetCatId}"]`);
+          const activeSubPanel = panel && $(".sub-panel.active", panel);
+          if (activeSubPanel) ensureRowsVisible(activeSubPanel);
         }
       }
     }
@@ -775,8 +851,8 @@
 
     const activePanel = $(".services-panel.active");
     if (activePanel && isInViewport(activePanel)) {
-      staggerReveal($$(".subcategory-card", activePanel), { step: 90 });
-      revealOpenRows(activePanel);
+      staggerReveal($$(".sidebar-item", activePanel), { step: 60 });
+      revealActiveRows(activePanel);
     }
   }
 
@@ -806,8 +882,8 @@
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const activePanel = $(".services-panel.active");
-            staggerReveal($$(".subcategory-card", activePanel), { step: 90 });
-            revealOpenRows(activePanel);
+            staggerReveal($$(".sidebar-item", activePanel), { step: 60 });
+            revealActiveRows(activePanel);
           }
         });
       }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });

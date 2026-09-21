@@ -38,7 +38,7 @@ build configuration (no build command, output directory = project root).
 | **About text & stats** | `js/translations.js` → `UI.en.about` / `UI.ar.about` |
 | **Testimonials** | `js/translations.js` → `TESTIMONIALS` array |
 | **Gallery photos** | Uses your real photos only (no external placeholder service) — `js/main.js` → `CONFIG.galleryImages`, each entry `{ file, alt: { en, ar } }` pointing at a file in `assets/images/optimized/`. Add/remove/reorder entries there; drop new originals in `assets/images/` and compress them into `assets/images/optimized/` first (see the compression note below). |
-| **Service prices/names** | `js/translations.js` → `SERVICES_DATA`. Everything is grouped by top-level category (Hair, Waxing & Threading, Skin, Nails, Eyelash & Eyebrow, Massage, Moroccan Bath, Henna) and then by subcategory, matching the original price list. Add, remove or re-price items here — the site re-renders from this single source of truth in both languages. |
+| **Service names** | `js/translations.js` → `SERVICES_DATA`. Everything is grouped by top-level category (Hair, Waxing & Threading, Skin, Nails, Eyelash & Eyebrow, Massage, Moroccan Bath, Henna) and then by subcategory. Add, remove or rename items here — the site re-renders from this single source of truth in both languages. Each item still carries a `price` field from the original price list, but the site no longer displays it (see below); it's dormant data, not deleted, in case pricing comes back later. |
 
 ## How the bilingual system works
 
@@ -53,7 +53,9 @@ build configuration (no build command, output directory = project root).
     testimonials, opening hours) from the translation data.
   - Persists the choice to `localStorage` so it's remembered on the next
     visit.
-- Prices automatically render as `AED 40` in English and `40 د.إ` in Arabic.
+- Pricing is intentionally not rendered — `renderServices()` in `js/main.js`
+  only outputs each item's name (and its "Add-on" tag where applicable),
+  ignoring the `price` field still present in `SERVICES_DATA`.
 
 ## Project structure
 
@@ -61,7 +63,7 @@ build configuration (no build command, output directory = project root).
 /
 ├── index.html              Page markup / section structure
 ├── css/style.css           All styling (responsive, RTL-aware, light/dark)
-├── js/translations.js      Bilingual UI strings + full service price list
+├── js/translations.js      Bilingual UI strings + full service list
 ├── js/main.js              Language switching, RTL, tabs/accordion, search, WhatsApp links
 ├── assets/images/          Logo + downloaded photos (originals) + optimized/ (web-sized copies actually used by the site)
 └── README.md
@@ -83,7 +85,8 @@ later.
 
 | File used | Mapped to | Notes |
 |---|---|---|
-| `banner-image.jpg` | **Hero** background (`#home`) and **Services & Price List** banner | Dark, editorial hair shot with the subject off to the right — `background-position` is biased toward that side (`68% …`) so she stays in frame on both wide and narrow viewports. Preloaded via `<link rel="preload">` so it doesn't flash in late. |
+| `banner-image-4.jpg` | **Hero** background (`#home`) and **Services & Treatments** banner | Editorial back-of-head hair shot, subject centered with plain background on both sides. The Hero zooms it in (`background-size: 165% auto`) purely to get horizontal pan room — at true `cover` this photo's aspect ratio leaves zero slack — then pans (`8% 22%`) to shift the hair off to one side so it doesn't sit directly behind the headline; `html[dir="rtl"] .hero-bg` mirrors that pan (`92% 22%`) so the hair swaps sides along with the text column. The Services banner keeps plain `cover` since its heading is centered, not off to one side. Preloaded via `<link rel="preload">` so it doesn't flash in late. |
+| `banner-image.jpg` | **Gallery** only | The original banner photo — kept in the Gallery grid via `CONFIG.galleryImages` in `js/main.js`. |
 | `hair-image.jpg` | **About** section photo frame | Salon-interior shot of a stylist finishing a client's hair — the framed portrait image next to the About text. |
 | `hair-2.jpg` | **Hair** tab background (Services → Hair) | Hair-wash-at-the-basin shot. |
 | `waxing.jpg` | **Waxing & Threading** tab background | |
@@ -112,20 +115,13 @@ backgrounds will noticeably slow the page down, especially on mobile.
 
 ## Scroll animations & backgrounds — how it works
 
-- **Hero**: `css/style.css` → `.hero-bg` layers a directional dark/gold
-  gradient over `assets/images/optimized/banner-image.jpg`,
-  `background-size: cover`, and `background-attachment: fixed` on desktop
-  (disabled — falls back to `scroll` — under 768px, since fixed backgrounds
-  cause scroll jank on iOS/Android).
-- **Services category backgrounds**: applied to every panel via
-  `.services-panel::before` in `css/style.css`, with a
-  `.services-panel[data-cat-panel="…"]::before` rule per category picking
-  the actual image. Because inactive tab panels stay `display:none` until
-  clicked, the browser doesn't fetch an unused category's background image
-  until that tab is actually opened — a free form of lazy-loading with no
-  extra JS needed.
-- **Overlay gradient direction flips in RTL**: both the hero and the services
-  backgrounds use `linear-gradient(var(--overlay-dir), …)`, where
+- **Hero**: `css/style.css` → `.hero-bg` layers a directional dark scrim
+  gradient over `assets/images/optimized/banner-image-4.jpg` (zoomed and
+  panned per the image table above), and `background-attachment: fixed` on
+  desktop (disabled — falls back to `scroll` — under 768px, since fixed
+  backgrounds cause scroll jank on iOS/Android).
+- **Overlay gradient direction flips in RTL**: the Services banner's dark
+  overlay uses `linear-gradient(var(--overlay-dir), …)`, where
   `--overlay-dir` is `to bottom right` by default and flips to
   `to bottom left` under `html[dir="rtl"]` (see `:root` and
   `html[dir="rtl"]` at the top of `css/style.css`). No JS involved — it
@@ -137,7 +133,7 @@ backgrounds will noticeably slow the page down, especially on mobile.
   `.in-view` the first time each one enters the viewport, which triggers the
   CSS transition. Respects `prefers-reduced-motion`.
 - **Staggered card cascade** (the about-stats boxes, gallery tiles,
-  testimonial cards, and the Services subcategory cards): each item carries a
+  testimonial cards, and the Services sidebar items): each item carries a
   `.reveal-item` class baked in from the moment it's rendered — it does *not*
   get added right before revealing, because doing both back-to-back lets the
   browser's CSS transition "reversal shortening" collapse the animation to
@@ -146,20 +142,28 @@ backgrounds will noticeably slow the page down, especially on mobile.
   cards-pop-in-one-after-another effect. Triggered once on scroll (via the
   same `IntersectionObserver` pattern) for the about/gallery/testimonials
   grids and the default Services tab; it also **replays every time a
-  Services tab is switched** (see the click handler in `bindServiceEvents()`)
-  — inspired by the cascading icon/card grids on
-  [kuruvaislandresort.com](https://kuruvaislandresort.com/), which use
-  WOW.js + animate.css with the same incremental-delay approach.
+  Services tab is switched** (see `revealSidebarInstant()` /
+  `switchCategory()` in `js/main.js`) — inspired by the cascading icon/card
+  grids on [kuruvaislandresort.com](https://kuruvaislandresort.com/), which
+  use WOW.js + animate.css with the same incremental-delay approach.
 - **Hover lift**: testimonial cards and the about-stats boxes lift slightly
   on hover (`transform: translateY(-6px)`), matching the interactive card
   feel of the reference site.
 
 ## Notes
 
-- The Services section is organized as tabs (top-level categories) containing
-  collapsible accordion cards (subcategories) so the ~300-item price list
-  stays scannable instead of one long page. The search box filters across
-  both languages' service names live.
+- The Services section is organized as tabs (top-level categories, e.g.
+  Hair, Skin, Nails) containing a sidebar/content menu — subcategory names
+  listed down the left (`.services-sidebar`), the selected one's items shown
+  in the panel on the right (`.services-content`) — so the ~300-item service
+  list stays scannable instead of one long page. Stacks into a horizontally
+  scrollable chip row above the content on narrow screens (<768px). The
+  search box filters across both languages' service names live, hiding
+  non-matching subcategories from the sidebar and jumping to the first
+  category/subcategory that still has a match.
+- Each category no longer has its own background photo behind the menu (a
+  previous design) — those photos (`hair-2.jpg`, `waxing.jpg`, `skin.jpg`,
+  etc.) are still in active use via the **Gallery** grid, just not here.
 - A WhatsApp floating button is pinned to the corner on every section for
   one-tap booking.
 - Basic SEO meta tags (title, description in both languages, Open Graph) are
