@@ -1,7 +1,9 @@
 /* =========================================================================
    Najla Chicago Salon — site behavior
-   Language toggle + RTL switch, services tabs/accordion/search,
-   dynamic rendering of stats/gallery/testimonials/hours, nav + WhatsApp FAB.
+   Language toggle + RTL switch, the Services menu (category pills →
+   subcategory rail → service cards, with search, deep links and the
+   optional "Build your visit" mode), dynamic rendering of
+   stats/gallery/testimonials/hours, nav + WhatsApp FAB.
    ========================================================================= */
 
 (function () {
@@ -75,6 +77,11 @@
     $$("[data-i18n-placeholder]").forEach((el) => {
       const value = getPath(dict, el.getAttribute("data-i18n-placeholder"));
       if (value !== null) el.setAttribute("placeholder", value);
+    });
+
+    $$("[data-i18n-aria-label]").forEach((el) => {
+      const value = getPath(dict, el.getAttribute("data-i18n-aria-label"));
+      if (value !== null) el.setAttribute("aria-label", value);
     });
 
     $("#langToggleLabel").textContent = dict.langToggle;
@@ -171,403 +178,735 @@
   }
 
   /* ---------------------------------------------------------------------
-     Services: category tabs + a sidebar/content "menu" per category
-     (subcategory names listed down the left, selected one's items shown
-     on the right) + search.
+     Services menu
+     Category pills (a real tablist) → subcategory rail (vertical sidebar
+     on desktop, horizontal chip row on mobile) → a panel of service
+     cards. Everything renders from SERVICES_DATA + SERVICES_CONFIG in
+     js/services-data.js.
+
+     Only the active category's rail and the active subcategory's cards
+     are in the DOM at any time — switching re-renders rather than
+     toggling 231 hidden cards. The panel keeps its measured height across
+     a swap so nothing on the page jumps.
      --------------------------------------------------------------------- */
   let activeCategoryId = SERVICES_DATA[0].id;
-  // Remembers which subcategory was last selected per top-level category
-  // (keyed by category id), so switching tabs and back doesn't reset it.
-  const activeSubIndexByCat = {};
+  let activeSubSlug = null;
+  let servicesQuery = "";
+  let hashTouched = false; // only start writing the URL hash after a real interaction
 
-  function isAddOn(name) {
-    return /^add\s*on|^إضافة/i.test(name.trim());
-  }
-
-  function getActiveSubIndex(cat) {
-    const idx = activeSubIndexByCat[cat.id];
-    return (typeof idx === "number" && idx < cat.subcategories.length) ? idx : 0;
-  }
-
-  function renderServices() {
-    const tabsEl = $("#servicesTabs");
-    const panelsEl = $("#servicesPanels");
-    if (!tabsEl || !panelsEl) return;
-
-    indicatorReady = false;
-    tabsEl.innerHTML = `<span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>` +
-      SERVICES_DATA.map((cat) => `
-      <button type="button" class="services-tab${cat.id === activeCategoryId ? " active" : ""}" data-cat="${cat.id}" role="tab" aria-selected="${cat.id === activeCategoryId}">
-        ${cat.name[currentLang]}
-      </button>
-    `).join("");
-
-    panelsEl.innerHTML = SERVICES_DATA.map((cat) => {
-      const activeSub = getActiveSubIndex(cat);
-      return `
-      <div class="services-panel${cat.id === activeCategoryId ? " active" : ""}" data-cat-panel="${cat.id}" role="tabpanel">
-        <div class="services-menu">
-          <div class="services-sidebar" role="tablist" aria-orientation="vertical" aria-label="${cat.name[currentLang]}">
-            ${cat.subcategories.map((sub, i) => `
-              <button type="button" class="sidebar-item reveal-item${i === activeSub ? " active" : ""}" data-sub-index="${i}" role="tab" aria-selected="${i === activeSub}" aria-controls="subpanel-${cat.id}-${i}" id="subtab-${cat.id}-${i}">
-                <span class="sidebar-item-name">${sub.name[currentLang]}</span>
-                <span class="sidebar-item-count">${sub.items.length}</span>
-              </button>
-            `).join("")}
-          </div>
-          <div class="services-content">
-            ${cat.subcategories.map((sub, i) => `
-              <div class="sub-panel${i === activeSub ? " active" : ""}" data-sub-panel="${i}" id="subpanel-${cat.id}-${i}" role="tabpanel" aria-labelledby="subtab-${cat.id}-${i}">
-                <div class="sub-panel-header">
-                  <h4 class="sub-panel-title">${sub.name[currentLang]}</h4>
-                  <span class="sub-panel-count">${sub.items.length} ${UI[currentLang].services.itemsCount}</span>
-                </div>
-                <div class="service-list">
-                  ${sub.items.map((item) => `
-                    <div class="service-row" data-search="${(item.en + " " + item.ar).toLowerCase()}">
-                      <span class="service-name">${isAddOn(item.en) ? `<span class="addon-tag">${UI[currentLang].services.addOn}</span>` : ""}${item[currentLang]}</span>
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-            `).join("")}
-          </div>
-        </div>
-      </div>`;
-    }).join("");
-
-    bindServiceEvents();
-    filterServices($("#serviceSearch") ? $("#serviceSearch").value : "");
-
-    positionTabIndicator($(".services-tab.active"));
-    const activePanel = $(`.services-panel[data-cat-panel="${activeCategoryId}"]`);
-    if (activePanel) revealActiveRows(activePanel);
-  }
-
-  function bindServiceEvents() {
-    $$(".services-tab").forEach((btn) => {
-      btn.addEventListener("click", () => switchCategory(btn.getAttribute("data-cat")));
-    });
-
-    $$(".sidebar-item").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const panel = btn.closest(".services-panel");
-        switchSubcategory(panel.getAttribute("data-cat-panel"), parseInt(btn.getAttribute("data-sub-index"), 10));
+  function svcText(key, vars) {
+    let out = UI[currentLang].services[key];
+    if (typeof out !== "string") return "";
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        out = out.split("{" + k + "}").join(vars[k]);
       });
-    });
+    }
+    return out;
+  }
 
-    // Up/Down (+ Home/End) moves focus within one category's sidebar and
-    // switches to that subcategory, mirroring how Left/Right drives the
-    // top-level category tabs.
-    $$(".services-sidebar").forEach((sidebar) => {
-      sidebar.addEventListener("keydown", (e) => {
-        if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
-        const items = $$(".sidebar-item", sidebar);
-        const currentIndex = items.indexOf(document.activeElement);
-        if (currentIndex === -1) return;
-        e.preventDefault();
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
 
-        let nextIndex = currentIndex;
-        if (e.key === "Home") nextIndex = 0;
-        else if (e.key === "End") nextIndex = items.length - 1;
-        else if (e.key === "ArrowDown") nextIndex = Math.min(currentIndex + 1, items.length - 1);
-        else nextIndex = Math.max(currentIndex - 1, 0);
+  function slugify(value) {
+    return String(value)
+      .toLowerCase()
+      .replace(/[‘’']/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
 
-        const nextItem = items[nextIndex];
-        if (nextItem && nextItem !== document.activeElement) {
-          nextItem.focus();
-          const panel = nextItem.closest(".services-panel");
-          switchSubcategory(panel.getAttribute("data-cat-panel"), nextIndex);
-        }
+  function isAddOnName(name) {
+    return /^add\s*on|^إضافة/i.test(String(name).trim());
+  }
+
+  /* Annotates SERVICES_DATA in place with stable slugs/ids, the add-on
+     flag and a lowercased search haystack. Runs once, before first paint.
+     Slugs come from the English name unless the data sets an explicit
+     `id`, and collisions within the same scope get a numeric suffix so
+     deep links stay unique. */
+  function indexServices() {
+    SERVICES_DATA.forEach((cat) => {
+      const usedSlugs = {};
+      cat.subcategories.forEach((sub) => {
+        let slug = sub.slug || slugify(sub.name.en);
+        if (usedSlugs[slug]) slug += "-" + (++usedSlugs[slug]);
+        else usedSlugs[slug] = 1;
+        sub.slug = slug;
+
+        const usedIds = {};
+        sub.items.forEach((item) => {
+          let id = item.id || slugify(item.en);
+          if (usedIds[id]) id += "-" + (++usedIds[id]);
+          else usedIds[id] = 1;
+          item.id = id;
+          item.uid = cat.id + "/" + sub.slug + "/" + id;
+          if (typeof item.isAddOn !== "boolean") item.isAddOn = isAddOnName(item.en);
+          item.search = (item.en + " " + item.ar).toLowerCase();
+        });
       });
     });
   }
 
-  // Switches which subcategory is shown within one category's panel — the
-  // sidebar selection and its matching content pane. `animate` is turned
-  // off while the visitor is actively typing in the search box (see
-  // filterServices), where a cascading entrance would just add lag.
-  function switchSubcategory(catId, subIndex, { animate = true } = {}) {
-    activeSubIndexByCat[catId] = subIndex;
-    const panel = $(`.services-panel[data-cat-panel="${catId}"]`);
-    if (!panel) return;
+  function getCategory(id) {
+    return SERVICES_DATA.find((c) => c.id === id) || SERVICES_DATA[0];
+  }
 
-    $$(".sidebar-item", panel).forEach((btn) => {
-      const on = parseInt(btn.getAttribute("data-sub-index"), 10) === subIndex;
-      btn.classList.toggle("active", on);
-      btn.setAttribute("aria-selected", on);
-    });
-    $$(".sub-panel", panel).forEach((sp) => {
-      sp.classList.toggle("active", parseInt(sp.getAttribute("data-sub-panel"), 10) === subIndex);
-    });
+  function getSubcategory(cat, slug) {
+    return cat.subcategories.find((s) => s.slug === slug) || cat.subcategories[0];
+  }
 
-    if (catId !== activeCategoryId) return; // an inactive tab's panel isn't visible; nothing to animate
-    const activeSubPanel = $(".sub-panel.active", panel);
-    if (!activeSubPanel) return;
-    if (animate) staggerRows($$(".service-row", activeSubPanel));
-    else ensureRowsVisible(activeSubPanel);
+  function matchedItems(sub) {
+    if (!servicesQuery) return sub.items;
+    return sub.items.filter((item) => item.search.indexOf(servicesQuery) !== -1);
+  }
+
+  function countLabel(n) {
+    return n + " " + svcText(n === 1 ? "itemsCountOne" : "itemsCount");
+  }
+
+  /* Both of these return "" when the underlying data isn't there, and the
+     templates below drop the element entirely rather than render a blank
+     or an "undefined". */
+  function formatPrice(item) {
+    if (!SERVICES_CONFIG.showPrices) return "";
+    const raw = item.price;
+    if (raw === undefined || raw === null || raw === "") return "";
+    const currency = SERVICES_CONFIG.currency[currentLang] || SERVICES_CONFIG.currency.en;
+    const amount = currentLang === "ar" ? raw + " " + currency : currency + " " + raw;
+    return item.priceFrom ? svcText("priceFrom", { price: amount }) : amount;
+  }
+
+  function formatDuration(item) {
+    if (!SERVICES_CONFIG.showDurations) return "";
+    const mins = item.durationMinutes;
+    if (typeof mins !== "number" || !isFinite(mins) || mins <= 0) return "";
+    return svcText("minutes", { n: mins });
+  }
+
+  function bookServiceLink(name) {
+    return "https://wa.me/" + CONFIG.whatsappNumber +
+      "?text=" + encodeURIComponent(svcText("bookMessage", { name: name }));
   }
 
   /* ---------------------------------------------------------------------
-     Services — sliding tab indicator
+     Services — templates
+     --------------------------------------------------------------------- */
+  function serviceCardHtml(item, sub) {
+    const name = item[currentLang];
+    const desc = item.description ? item.description[currentLang] : "";
+    const meta = [formatDuration(item), formatPrice(item)].filter(Boolean);
+    const parentName = item.addOnFor ? item.addOnFor[currentLang] : sub.name[currentLang];
+    const tags = [];
+    if (item.isAddOn) tags.push(`<span class="svc-tag svc-tag-addon">${svcText("addOn")}</span>`);
+    else if (item.popular) tags.push(`<span class="svc-tag svc-tag-popular">${svcText("popularTag")}</span>`);
+
+    const added = isInVisit(item.uid);
+    const action = SERVICES_CONFIG.bookingMode
+      ? `<button type="button" class="svc-action svc-add${added ? " is-added" : ""}" data-uid="${escapeHtml(item.uid)}" aria-pressed="${added}">${added ? svcText("added") : svcText("add")}</button>`
+      : `<a class="svc-action svc-book" href="${escapeHtml(bookServiceLink(name))}" target="_blank" rel="noopener" aria-label="${escapeHtml(svcText("bookAria", { name: name }))}">${svcText("book")}</a>`;
+
+    return `
+      <article class="svc-card${item.isAddOn ? " is-addon" : ""}">
+        ${tags.length ? `<div class="svc-card-tags">${tags.join("")}</div>` : ""}
+        <h4 class="svc-card-name">${name}</h4>
+        ${item.isAddOn ? `<p class="svc-card-parent">${svcText("addOnFor", { name: parentName })}</p>` : ""}
+        ${desc ? `<p class="svc-card-desc">${desc}</p>` : ""}
+        <div class="svc-card-foot">
+          ${meta.length ? `<p class="svc-card-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p>` : `<span class="svc-card-meta-spacer" aria-hidden="true"></span>`}
+          ${action}
+        </div>
+      </article>`;
+  }
+
+  /* Soft card that keeps a short subcategory from ending in dead space.
+     Configurable via SERVICES_CONFIG.helperCard; never shown while a
+     search is narrowing the list. */
+  function helperCardHtml(sub, visibleCount) {
+    const cfg = SERVICES_CONFIG.helperCard || {};
+    if (!cfg.enabled || servicesQuery) return "";
+    if (visibleCount >= (cfg.minServices || 0)) return "";
+
+    if (cfg.type === "popular") {
+      const popular = sub.items.filter((item) => item.popular);
+      if (!popular.length) return "";
+      return `
+        <aside class="svc-helper">
+          <h4 class="svc-helper-title">${svcText("popularTitle")}</h4>
+          <ul class="svc-helper-list">
+            ${popular.map((item) => `<li>${item[currentLang]}</li>`).join("")}
+          </ul>
+        </aside>`;
+    }
+
+    return `
+      <aside class="svc-helper">
+        <h4 class="svc-helper-title">${svcText("helpTitle")}</h4>
+        <p class="svc-helper-text">${svcText("helpText")}</p>
+        <a class="svc-helper-cta" href="${escapeHtml(buildWhatsAppLink())}" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.464 3.484 1.345 5.001L2 22l5.126-1.345a9.958 9.958 0 004.878 1.242h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.18-2.928-7.069a9.93 9.93 0 00-7.073-2.928zm0 18.166h-.003a8.15 8.15 0 01-4.153-1.137l-.298-.177-3.043.799.812-2.967-.194-.304a8.156 8.156 0 01-1.253-4.36c0-4.511 3.671-8.181 8.185-8.181a8.13 8.13 0 015.789 2.398 8.129 8.129 0 012.396 5.792c-.001 4.512-3.672 8.182-8.184 8.182z"/></svg>
+          ${svcText("helpCta")}
+        </a>
+      </aside>`;
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — rendering
+     --------------------------------------------------------------------- */
+  function renderCategoryPills() {
+    const tabsEl = $("#servicesTabs");
+    if (!tabsEl) return;
+
+    tabsEl.innerHTML = `<span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>` +
+      SERVICES_DATA.map((cat) => {
+        const on = cat.id === activeCategoryId;
+        return `
+        <button type="button" role="tab" id="svctab-${cat.id}" class="services-tab${on ? " active" : ""}"
+                data-cat="${cat.id}" aria-selected="${on}" aria-controls="servicesPanel" tabindex="${on ? 0 : -1}">
+          ${cat.name[currentLang]}
+        </button>`;
+      }).join("");
+
+    indicatorReady = false;
+    positionTabIndicator($(".services-tab.active"));
+  }
+
+  function renderRail() {
+    const rail = $("#servicesRail");
+    if (!rail) return;
+    const cat = getCategory(activeCategoryId);
+
+    rail.innerHTML = `<span class="rail-indicator" id="railIndicator" aria-hidden="true"></span>` +
+      cat.subcategories.map((sub) => {
+        const count = matchedItems(sub).length;
+        const on = sub.slug === activeSubSlug;
+        const hidden = servicesQuery && count === 0;
+        return `
+        <button type="button" class="rail-item${on ? " active" : ""}" data-sub="${sub.slug}"
+                aria-current="${on ? "true" : "false"}"${hidden ? " hidden" : ""}>
+          <span class="rail-item-name">${sub.name[currentLang]}</span>
+          <span class="rail-item-count">${count}</span>
+        </button>`;
+      }).join("");
+
+    railIndicatorReady = false;
+    positionRailIndicator($(".rail-item.active"));
+  }
+
+  function renderPanel(options) {
+    const opts = options || {};
+    const body = $("#svcPanelBody");
+    const panel = $("#servicesPanel");
+    if (!body || !panel) return;
+
+    const cat = getCategory(activeCategoryId);
+    const sub = getSubcategory(cat, activeSubSlug);
+    const items = matchedItems(sub);
+    const main = items.filter((item) => !item.isAddOn);
+    const addOns = items.filter((item) => item.isAddOn);
+
+    const titleEl = $("#svcPanelTitle");
+    const countEl = $("#svcPanelCount");
+    if (titleEl) titleEl.textContent = sub.name[currentLang];
+    if (countEl) countEl.textContent = items.length ? countLabel(items.length) : "";
+    panel.setAttribute("aria-labelledby", "svctab-" + cat.id);
+
+    // Hold the outgoing height across the swap so the page never jumps.
+    const previousHeight = body.offsetHeight;
+    if (previousHeight) body.style.minHeight = previousHeight + "px";
+
+    if (!items.length) {
+      body.innerHTML = `<p class="svc-empty">${svcText("noResults")}</p>`;
+    } else {
+      body.innerHTML = `
+        ${main.length ? `<div class="svc-grid">${main.map((item) => serviceCardHtml(item, sub)).join("")}</div>` : ""}
+        ${addOns.length ? `
+          <section class="svc-addons">
+            <h4 class="svc-addons-title">${svcText("addOnsHeading")}</h4>
+            <div class="svc-grid">${addOns.map((item) => serviceCardHtml(item, sub)).join("")}</div>
+          </section>` : ""}
+        ${helperCardHtml(sub, items.length)}`;
+    }
+
+    // Release the held height once the new content has laid out.
+    requestAnimationFrame(() => {
+      body.style.minHeight = "";
+    });
+
+    animatePanelIn(body, opts.direction || 0, opts.animate !== false);
+    announceResults(sub, items.length);
+  }
+
+  function renderServices() {
+    const cat = getCategory(activeCategoryId);
+    activeCategoryId = cat.id;
+    if (!activeSubSlug || !cat.subcategories.some((s) => s.slug === activeSubSlug)) {
+      activeSubSlug = cat.subcategories[0].slug;
+    }
+    renderCategoryPills();
+    renderRail();
+    renderPanel({ animate: false });
+    renderVisitSummary();
+  }
+
+  function announceResults(sub, count) {
+    const live = $("#servicesLive");
+    if (!live) return;
+    live.textContent = count
+      ? svcText("resultsAnnounced", { n: count, name: sub.name[currentLang] })
+      : svcText("noResults");
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — motion (transform/opacity only, all tunable from CSS vars)
+     --------------------------------------------------------------------- */
+  function animatePanelIn(body, direction, animate) {
+    const cards = $$(".svc-card, .svc-helper", body);
+    if (!animate || prefersReducedMotion()) {
+      body.classList.remove("is-entering");
+      body.style.removeProperty("--svc-dir");
+      cards.forEach((card) => card.classList.add("is-in"));
+      return;
+    }
+
+    body.style.setProperty("--svc-dir", direction);
+    body.classList.remove("is-entering");
+    void body.offsetWidth; // commit the removal before re-adding
+    body.classList.add("is-entering");
+
+    const step = getCssNumber("--svc-stagger", 50);
+    const total = getCssNumber("--svc-stagger-total", 400);
+    const perItem = cards.length > 1 ? Math.min(step, total / (cards.length - 1)) : 0;
+    cards.forEach((card, i) => {
+      card.style.transitionDelay = Math.round(i * perItem) + "ms";
+    });
+
+    requestAnimationFrame(() => {
+      cards.forEach((card) => card.classList.add("is-in"));
+    });
+
+    const settle = Math.round((cards.length - 1) * perItem) + getCssNumber("--svc-duration", 320) + 80;
+    setTimeout(() => {
+      cards.forEach((card) => { card.style.transitionDelay = ""; });
+      body.classList.remove("is-entering");
+    }, settle);
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — sliding indicators
+     Both are measured against the real button they sit behind and moved
+     with transform only; width/height are assigned directly rather than
+     transitioned, since animating those is what actually costs layout on
+     cheap phones.
      --------------------------------------------------------------------- */
   let indicatorReady = false;
+  let railIndicatorReady = false;
 
-  function positionTabIndicator(activeBtn) {
-    const tabsEl = $("#servicesTabs");
-    const indicator = $("#tabIndicator");
-    if (!tabsEl || !indicator || !activeBtn) return;
+  function positionIndicator(container, indicator, target, readyFlag) {
+    if (!container || !indicator || !target) return readyFlag;
+    const box = container.getBoundingClientRect();
+    const rect = target.getBoundingClientRect();
+    const x = rect.left - box.left + container.scrollLeft;
+    const y = rect.top - box.top + container.scrollTop;
 
-    const tabsRect = tabsEl.getBoundingClientRect();
-    const btnRect = activeBtn.getBoundingClientRect();
-    const x = btnRect.left - tabsRect.left + tabsEl.scrollLeft;
-    const y = btnRect.top - tabsRect.top;
+    indicator.style.width = rect.width + "px";
+    indicator.style.height = rect.height + "px";
 
-    // Width/height are assigned directly rather than transitioned — the
-    // motion rules call for animating transform/opacity only, so a pill
-    // moving to a wider/narrower tab snaps to the new size and slides via
-    // translate, instead of animating width (which is what actually costs
-    // layout on cheap phones).
-    indicator.style.width = btnRect.width + "px";
-    indicator.style.height = btnRect.height + "px";
-
-    if (!indicatorReady) {
+    if (!readyFlag) {
       indicator.classList.add("no-anim");
       indicator.style.transform = `translate(${x}px, ${y}px)`;
       void indicator.offsetWidth;
       indicator.classList.remove("no-anim");
-      indicatorReady = true;
+      return true;
+    }
+    indicator.style.transform = `translate(${x}px, ${y}px)`;
+    return true;
+  }
+
+  function positionTabIndicator(target) {
+    indicatorReady = positionIndicator($("#servicesTabs"), $("#tabIndicator"), target, indicatorReady);
+  }
+
+  function positionRailIndicator(target) {
+    railIndicatorReady = positionIndicator($("#servicesRail"), $("#railIndicator"), target, railIndicatorReady);
+  }
+
+  // Scrolls a horizontally scrollable rail so the active item is centered,
+  // without ever scrolling the page itself.
+  function scrollItemIntoView(container, item) {
+    if (!container || !item) return;
+    if (container.scrollWidth <= container.clientWidth) return;
+    const target = item.offsetLeft - (container.clientWidth - item.offsetWidth) / 2;
+    const left = Math.max(0, Math.min(target, container.scrollWidth - container.clientWidth));
+    if (typeof container.scrollTo === "function") {
+      container.scrollTo({ left: left, behavior: prefersReducedMotion() ? "auto" : "smooth" });
     } else {
-      indicator.style.transform = `translate(${x}px, ${y}px)`;
+      container.scrollLeft = left;
     }
   }
 
-  function updateTabsUI() {
-    $$(".services-tab").forEach((b) => {
-      const on = b.getAttribute("data-cat") === activeCategoryId;
-      b.classList.toggle("active", on);
-      b.setAttribute("aria-selected", on);
-      if (on) positionTabIndicator(b);
-    });
-  }
-
-  function scrollActiveTabIntoView() {
-    const btn = $(`.services-tab[data-cat="${activeCategoryId}"]`);
-    if (!btn) return;
-    btn.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", inline: "center", block: "nearest" });
-  }
-
   /* ---------------------------------------------------------------------
-     Services — staggered row entrance
+     Services — switching
      --------------------------------------------------------------------- */
-  function staggerRows(rows) {
-    const list = Array.from(rows || []).filter((r) => !r.classList.contains("hidden-by-search"));
-    if (!list.length) return;
-    const reduced = prefersReducedMotion();
-    const stepMs = getCssNumber("--row-stagger-step", 50);
-    const maxMs = getCssNumber("--row-stagger-max", 600);
-    const step = list.length > 1 ? Math.min(stepMs, maxMs / (list.length - 1)) : 0;
-
-    list.forEach((el, i) => {
-      el.classList.remove("row-in");
-      el.style.transitionDelay = reduced ? "0ms" : Math.round(i * step) + "ms";
-      el.style.willChange = "transform, opacity";
-    });
-
-    // Force a reflow so the removal above commits before "row-in" is
-    // re-added — see staggerReveal()'s comment for why this matters.
-    void list[0].offsetHeight;
-
-    requestAnimationFrame(() => {
-      list.forEach((el) => el.classList.add("row-in"));
-      const rowDuration = getCssNumber("--row-duration", 380);
-      const total = Math.round((list.length - 1) * step) + rowDuration + 60;
-      setTimeout(() => {
-        list.forEach((el) => {
-          el.style.transitionDelay = "";
-          el.style.willChange = "";
-        });
-      }, total);
-    });
-  }
-
-  // Staggers in the rows of whichever subcategory is currently active
-  // within a category panel.
-  function revealActiveRows(panel) {
-    if (!panel) return;
-    const activeSubPanel = $(".sub-panel.active", panel);
-    if (activeSubPanel) staggerRows($$(".service-row", activeSubPanel));
-  }
-
-  // Makes a newly-shown panel's sidebar items appear instantly, bypassing
-  // their own reveal-item transition. The panel itself carries the
-  // entrance motion on a tab switch (see switchCategory), so the items
-  // riding along with it shouldn't also run their own separate fade-up —
-  // that would look like two animations fighting each other.
-  function revealSidebarInstant(panel) {
-    $$(".sidebar-item", panel).forEach((el) => {
-      el.style.transition = "none";
-      el.classList.add("in-view");
-      void el.offsetHeight;
-      el.style.transition = "";
-    });
-  }
-
-  // Instantly (no stagger) marks a sub-panel's rows visible — used when it's
-  // brought into view as a side effect of the search filter, where a
-  // cascading entrance would just add lag to every keystroke.
-  function ensureRowsVisible(subPanel) {
-    $$(".service-row", subPanel).forEach((r) => {
-      r.style.transitionDelay = "";
-      r.classList.add("row-in");
-    });
-  }
-
-  /* ---------------------------------------------------------------------
-     Services — directional category switch
-     --------------------------------------------------------------------- */
-  let switchToken = 0;
-  const pendingSwitchTimers = [];
-
-  function resetPanelMotion(panel) {
-    if (!panel) return;
-    panel.classList.remove("slide-out", "slide-in", "slide-in-start");
-    panel.style.willChange = "";
-  }
-
-  function switchCategory(newId) {
+  function switchCategory(newId, opts) {
+    const options = opts || {};
     if (!newId || newId === activeCategoryId) return;
-    const newPanel = $(`.services-panel[data-cat-panel="${newId}"]`);
-    if (!newPanel) return;
+    const oldIndex = SERVICES_DATA.findIndex((c) => c.id === activeCategoryId);
+    const newIndex = SERVICES_DATA.findIndex((c) => c.id === newId);
+    if (newIndex === -1) return;
 
     activeCategoryId = newId;
-    const myToken = ++switchToken;
+    const cat = getCategory(newId);
+    activeSubSlug = options.subSlug && cat.subcategories.some((s) => s.slug === options.subSlug)
+      ? options.subSlug
+      : cat.subcategories[0].slug;
 
-    // Cancel anything left over from an interrupted switch so it can't
-    // fire stale callbacks against this new one.
-    pendingSwitchTimers.forEach(clearTimeout);
-    pendingSwitchTimers.length = 0;
+    const rtl = document.documentElement.getAttribute("dir") === "rtl";
+    const direction = (newIndex >= oldIndex ? 1 : -1) * (rtl ? -1 : 1);
 
-    updateTabsUI();
-    scrollActiveTabIntoView();
+    updatePillsUI();
+    renderRail();
+    renderPanel({ direction: direction });
+    if (options.fromUser !== false) markHashDirty();
+  }
 
-    // Whichever panel is currently visible in the DOM — including one
-    // still mid-exit from a rapid previous click — is the real "old" one.
-    // Any other stray .active panel (shouldn't normally happen, but a fast
-    // double-click could race here) is force-settled with no animation.
-    const oldPanel = $$(".services-panel.active").find((p) => p !== newPanel) || null;
-    $$(".services-panel").forEach((p) => {
-      if (p !== oldPanel && p !== newPanel && p.classList.contains("active")) {
-        p.classList.remove("active");
-        resetPanelMotion(p);
+  function switchSubcategory(slug, opts) {
+    const options = opts || {};
+    const cat = getCategory(activeCategoryId);
+    if (!slug || !cat.subcategories.some((s) => s.slug === slug)) return;
+    if (slug === activeSubSlug && options.force !== true) return;
+
+    activeSubSlug = slug;
+    updateRailUI();
+    renderPanel({ direction: 0, animate: options.animate !== false });
+    if (options.fromUser !== false) markHashDirty();
+  }
+
+  function updatePillsUI() {
+    const tabs = $$(".services-tab");
+    tabs.forEach((btn) => {
+      const on = btn.getAttribute("data-cat") === activeCategoryId;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-selected", on);
+      btn.setAttribute("tabindex", on ? "0" : "-1");
+      if (on) {
+        positionTabIndicator(btn);
+        scrollItemIntoView($("#servicesTabs"), btn);
       }
     });
+  }
 
-    const oldCatId = oldPanel ? oldPanel.getAttribute("data-cat-panel") : null;
-    const oldIndex = SERVICES_DATA.findIndex((c) => c.id === oldCatId);
-    const newIndex = SERVICES_DATA.findIndex((c) => c.id === newId);
-    const dir = newIndex >= oldIndex ? 1 : -1;
-
-    revealSidebarInstant(newPanel);
-
-    const reduced = prefersReducedMotion();
-    if (reduced || !oldPanel || oldPanel === newPanel) {
-      if (oldPanel && oldPanel !== newPanel) {
-        oldPanel.classList.remove("active");
-        resetPanelMotion(oldPanel);
+  function updateRailUI() {
+    $$(".rail-item").forEach((btn) => {
+      const on = btn.getAttribute("data-sub") === activeSubSlug;
+      btn.classList.toggle("active", on);
+      btn.setAttribute("aria-current", on ? "true" : "false");
+      if (on) {
+        positionRailIndicator(btn);
+        scrollItemIntoView($("#servicesRail"), btn);
       }
-      resetPanelMotion(newPanel);
-      newPanel.classList.add("active");
-      revealActiveRows(newPanel);
+    });
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — search, scoped to the active category
+     --------------------------------------------------------------------- */
+  function applyServicesSearch(value) {
+    servicesQuery = (value || "").trim().toLowerCase();
+    const clearBtn = $("#serviceSearchClear");
+    if (clearBtn) clearBtn.hidden = !servicesQuery;
+
+    const cat = getCategory(activeCategoryId);
+    // If the open subcategory has nothing left, move to the first one that does.
+    if (servicesQuery) {
+      const current = getSubcategory(cat, activeSubSlug);
+      if (!matchedItems(current).length) {
+        const firstHit = cat.subcategories.find((sub) => matchedItems(sub).length);
+        if (firstHit) activeSubSlug = firstHit.slug;
+      }
+    }
+
+    renderRail();
+    renderPanel({ direction: 0, animate: false });
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — deep links (#category/subcategory), restored on reload
+     --------------------------------------------------------------------- */
+  function parseServicesHash() {
+    const raw = (location.hash || "").replace(/^#/, "");
+    if (!raw || raw.indexOf("/") === -1) return null; // plain #services, #about … aren't ours
+    const parts = raw.split("/");
+    const cat = SERVICES_DATA.find((c) => c.id === parts[0]);
+    if (!cat) return null;
+    const sub = cat.subcategories.find((s) => s.slug === parts[1]);
+    return { categoryId: cat.id, subSlug: sub ? sub.slug : cat.subcategories[0].slug };
+  }
+
+  function markHashDirty() {
+    hashTouched = true;
+    writeServicesHash();
+  }
+
+  function writeServicesHash() {
+    if (!hashTouched) return;
+    const hash = "#" + activeCategoryId + "/" + activeSubSlug;
+    if (location.hash !== hash) history.replaceState(null, "", hash);
+  }
+
+  function applyServicesHash(opts) {
+    const state = parseServicesHash();
+    if (!state) return false;
+    activeCategoryId = state.categoryId;
+    activeSubSlug = state.subSlug;
+    hashTouched = true;
+    renderServices();
+    if (opts && opts.scroll) {
+      const section = $("#services");
+      if (section) section.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+    }
+    return true;
+  }
+
+  /* ---------------------------------------------------------------------
+     Services — "Build your visit" (SERVICES_CONFIG.bookingMode)
+     Off by default. Adds an Add button per card and a running summary:
+     a sticky bar on mobile, a side panel on desktop, handing off to
+     WhatsApp with the selection pre-filled.
+     --------------------------------------------------------------------- */
+  const visitItems = [];
+
+  function isInVisit(uid) {
+    return visitItems.some((entry) => entry.uid === uid);
+  }
+
+  function findServiceByUid(uid) {
+    for (const cat of SERVICES_DATA) {
+      for (const sub of cat.subcategories) {
+        const hit = sub.items.find((item) => item.uid === uid);
+        if (hit) return hit;
+      }
+    }
+    return null;
+  }
+
+  function toggleVisitItem(uid) {
+    const index = visitItems.findIndex((entry) => entry.uid === uid);
+    if (index > -1) visitItems.splice(index, 1);
+    else {
+      const item = findServiceByUid(uid);
+      if (item) visitItems.push({ uid: uid, item: item });
+    }
+    $$(`.svc-add[data-uid="${uid}"]`).forEach((btn) => {
+      const added = isInVisit(uid);
+      btn.classList.toggle("is-added", added);
+      btn.setAttribute("aria-pressed", added);
+      btn.textContent = added ? svcText("added") : svcText("add");
+    });
+    renderVisitSummary();
+  }
+
+  function visitTotals() {
+    let minutes = 0;
+    let price = 0;
+    let allTimed = visitItems.length > 0;
+    let allPriced = visitItems.length > 0;
+
+    visitItems.forEach(({ item }) => {
+      if (typeof item.durationMinutes === "number" && isFinite(item.durationMinutes)) minutes += item.durationMinutes;
+      else allTimed = false;
+      const numeric = typeof item.price === "number" ? item.price : parseFloat(item.price);
+      if (isFinite(numeric) && String(item.price).match(/^\d+(\.\d+)?$/)) price += numeric;
+      else allPriced = false;
+    });
+
+    return {
+      minutes: allTimed ? minutes : null,
+      price: allPriced && SERVICES_CONFIG.showPrices ? price : null
+    };
+  }
+
+  function visitWhatsAppLink() {
+    const lines = visitItems.map(({ item }) => "• " + item[currentLang]);
+    const message = svcText("visitMessage") + "\n" + lines.join("\n");
+    return "https://wa.me/" + CONFIG.whatsappNumber + "?text=" + encodeURIComponent(message);
+  }
+
+  function renderVisitSummary() {
+    const box = $("#visitSummary");
+    if (!box) return;
+    if (!SERVICES_CONFIG.bookingMode) {
+      box.hidden = true;
+      box.innerHTML = "";
+      document.body.classList.remove("has-visit-summary");
       return;
     }
 
-    oldPanel.style.setProperty("--slide-dir", dir);
-    oldPanel.style.willChange = "transform, opacity";
-    oldPanel.classList.add("slide-out");
-
-    const finishExit = () => {
-      if (myToken !== switchToken) return;
-      oldPanel.classList.remove("active");
-      resetPanelMotion(oldPanel);
-      beginEnter();
-    };
-    oldPanel.addEventListener("transitionend", function onExitEnd(e) {
-      if (e.target !== oldPanel) return;
-      oldPanel.removeEventListener("transitionend", onExitEnd);
-      finishExit();
-    });
-    pendingSwitchTimers.push(setTimeout(finishExit, getCssNumber("--motion-exit-duration", 160) + 80));
-
-    function beginEnter() {
-      if (myToken !== switchToken) return;
-      newPanel.style.setProperty("--slide-dir", dir);
-      newPanel.style.willChange = "transform, opacity";
-      newPanel.classList.add("active", "slide-in-start");
-      void newPanel.offsetWidth;
-
-      requestAnimationFrame(() => {
-        if (myToken !== switchToken) return;
-        newPanel.classList.remove("slide-in-start");
-        newPanel.classList.add("slide-in");
-        revealActiveRows(newPanel);
-      });
-
-      const finishEnter = () => {
-        if (myToken !== switchToken) return;
-        resetPanelMotion(newPanel);
-      };
-      newPanel.addEventListener("transitionend", function onEnterEnd(e) {
-        if (e.target !== newPanel) return;
-        newPanel.removeEventListener("transitionend", onEnterEnd);
-        finishEnter();
-      });
-      pendingSwitchTimers.push(setTimeout(finishEnter, getCssNumber("--motion-duration", 300) + 100));
+    document.body.classList.add("has-visit-summary");
+    box.hidden = false;
+    const totals = visitTotals();
+    const rows = [];
+    if (totals.minutes !== null) rows.push(`<p class="visit-total"><span>${svcText("visitTotalTime")}</span><strong>${svcText("minutes", { n: totals.minutes })}</strong></p>`);
+    if (totals.price !== null) {
+      const currency = SERVICES_CONFIG.currency[currentLang] || SERVICES_CONFIG.currency.en;
+      const amount = currentLang === "ar" ? totals.price + " " + currency : currency + " " + totals.price;
+      rows.push(`<p class="visit-total"><span>${svcText("visitTotalPrice")}</span><strong>${amount}</strong></p>`);
     }
+
+    box.innerHTML = `
+      <div class="visit-head">
+        <h4 class="visit-title">${svcText("visitTitle")}</h4>
+        ${visitItems.length ? `<span class="visit-count">${svcText("visitCount", { n: visitItems.length })}</span>` : ""}
+      </div>
+      ${visitItems.length ? `
+        <ul class="visit-list">
+          ${visitItems.map(({ uid, item }) => `
+            <li class="visit-row">
+              <span>${item[currentLang]}</span>
+              <button type="button" class="visit-remove" data-uid="${escapeHtml(uid)}" aria-label="${escapeHtml(svcText("removeAria", { name: item[currentLang] }))}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+              </button>
+            </li>`).join("")}
+        </ul>
+        ${rows.join("")}
+        <div class="visit-actions">
+          <a class="visit-book" href="${escapeHtml(visitWhatsAppLink())}" target="_blank" rel="noopener">${svcText("visitBook")}</a>
+          <button type="button" class="visit-clear" id="visitClear">${svcText("visitClear")}</button>
+        </div>`
+      : `<p class="visit-empty">${svcText("visitEmpty")}</p>`}`;
   }
 
   /* ---------------------------------------------------------------------
-     Services — keyboard tab navigation (Left/Right/Home/End) and mobile
-     swipe. Both funnel through switchCategory() so they animate exactly
-     like a click.
+     Services — events
+     Delegated from the stable containers, so a re-render never drops a
+     listener.
      --------------------------------------------------------------------- */
-  function initTabsKeyboardNav() {
+  function initServicesMenu() {
     const tabsEl = $("#servicesTabs");
-    if (!tabsEl) return;
-    tabsEl.addEventListener("keydown", (e) => {
-      if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
-      const tabs = $$(".services-tab").filter((b) => b.style.display !== "none");
-      const currentIndex = tabs.indexOf(document.activeElement);
-      if (currentIndex === -1) return;
-      e.preventDefault();
+    const railEl = $("#servicesRail");
+    const panelEl = $("#servicesPanel");
+    const searchEl = $("#serviceSearch");
+    const clearEl = $("#serviceSearchClear");
+    const summaryEl = $("#visitSummary");
 
-      const rtl = document.documentElement.getAttribute("dir") === "rtl";
-      let nextIndex = currentIndex;
-      if (e.key === "Home") nextIndex = 0;
-      else if (e.key === "End") nextIndex = tabs.length - 1;
-      else {
-        const forward = (e.key === "ArrowRight") !== rtl;
-        nextIndex = forward ? Math.min(currentIndex + 1, tabs.length - 1) : Math.max(currentIndex - 1, 0);
-      }
+    if (tabsEl) {
+      tabsEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".services-tab");
+        if (btn) switchCategory(btn.getAttribute("data-cat"));
+      });
+      tabsEl.addEventListener("keydown", (e) => {
+        if (["ArrowRight", "ArrowLeft", "Home", "End"].indexOf(e.key) === -1) return;
+        const tabs = $$(".services-tab", tabsEl);
+        const current = tabs.indexOf(document.activeElement);
+        if (current === -1) return;
+        e.preventDefault();
+        const rtl = document.documentElement.getAttribute("dir") === "rtl";
+        let next = current;
+        if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = tabs.length - 1;
+        else {
+          const forward = (e.key === "ArrowRight") !== rtl;
+          next = forward ? Math.min(current + 1, tabs.length - 1) : Math.max(current - 1, 0);
+        }
+        if (tabs[next] && tabs[next] !== document.activeElement) {
+          tabs[next].focus();
+          switchCategory(tabs[next].getAttribute("data-cat"));
+        }
+      });
+    }
 
-      const nextTab = tabs[nextIndex];
-      if (nextTab && nextTab !== document.activeElement) {
-        nextTab.focus();
-        switchCategory(nextTab.getAttribute("data-cat"));
-      }
+    if (railEl) {
+      railEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".rail-item");
+        if (btn) switchSubcategory(btn.getAttribute("data-sub"));
+      });
+      railEl.addEventListener("keydown", (e) => {
+        if (["ArrowDown", "ArrowUp", "Home", "End"].indexOf(e.key) === -1) return;
+        const items = $$(".rail-item", railEl).filter((b) => !b.hidden);
+        const current = items.indexOf(document.activeElement);
+        if (current === -1) return;
+        e.preventDefault();
+        let next = current;
+        if (e.key === "Home") next = 0;
+        else if (e.key === "End") next = items.length - 1;
+        else if (e.key === "ArrowDown") next = Math.min(current + 1, items.length - 1);
+        else next = Math.max(current - 1, 0);
+        if (items[next] && items[next] !== document.activeElement) {
+          items[next].focus();
+          switchSubcategory(items[next].getAttribute("data-sub"));
+        }
+      });
+    }
+
+    if (panelEl) {
+      panelEl.addEventListener("click", (e) => {
+        const addBtn = e.target.closest(".svc-add");
+        if (addBtn) toggleVisitItem(addBtn.getAttribute("data-uid"));
+      });
+    }
+
+    if (searchEl) {
+      searchEl.addEventListener("input", (e) => applyServicesSearch(e.target.value));
+    }
+    if (clearEl) {
+      clearEl.addEventListener("click", () => {
+        if (searchEl) searchEl.value = "";
+        applyServicesSearch("");
+        if (searchEl) searchEl.focus();
+      });
+    }
+
+    if (summaryEl) {
+      summaryEl.addEventListener("click", (e) => {
+        const removeBtn = e.target.closest(".visit-remove");
+        if (removeBtn) { toggleVisitItem(removeBtn.getAttribute("data-uid")); return; }
+        if (e.target.closest("#visitClear")) {
+          visitItems.length = 0;
+          $$(".svc-add").forEach((btn) => {
+            btn.classList.remove("is-added");
+            btn.setAttribute("aria-pressed", "false");
+            btn.textContent = svcText("add");
+          });
+          renderVisitSummary();
+        }
+      });
+    }
+
+    window.addEventListener("hashchange", () => applyServicesHash({ scroll: false }));
+
+    // Both indicators are measured from live geometry, so anything that
+    // reflows the bars has to re-measure them.
+    let resizeRaf = null;
+    window.addEventListener("resize", () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(() => {
+        positionTabIndicator($(".services-tab.active"));
+        positionRailIndicator($(".rail-item.active"));
+      });
     });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        positionTabIndicator($(".services-tab.active"));
+        positionRailIndicator($(".rail-item.active"));
+      });
+    }
   }
 
+  /* Swipe across the panel to move between categories, matching the
+     click/keyboard paths. */
   function initServicesSwipe() {
-    const panelsEl = $("#servicesPanels");
-    if (!panelsEl) return;
+    const panelEl = $("#servicesPanel");
+    if (!panelEl) return;
 
     let startX = 0;
     let startY = 0;
     let tracking = false;
-    let axis = null; // "h" | "v" | null (undecided)
+    let axis = null;
 
-    panelsEl.addEventListener("touchstart", (e) => {
+    panelEl.addEventListener("touchstart", (e) => {
       if (e.touches.length !== 1) return;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
@@ -575,112 +914,27 @@
       axis = null;
     }, { passive: true });
 
-    panelsEl.addEventListener("touchmove", (e) => {
+    panelEl.addEventListener("touchmove", (e) => {
       if (!tracking) return;
       const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
       if (axis === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
         axis = Math.abs(dx) > Math.abs(dy) * 1.3 ? "h" : "v";
       }
-      // Only steal the gesture once it's clearly horizontal — vertical and
-      // undecided gestures are left alone so page scroll is never hijacked.
       if (axis === "h" && e.cancelable) e.preventDefault();
     }, { passive: false });
 
-    function onTouchEnd(e) {
+    panelEl.addEventListener("touchend", (e) => {
       if (!tracking) return;
       tracking = false;
       if (axis !== "h") return;
       const dx = e.changedTouches[0].clientX - startX;
-      const SWIPE_THRESHOLD = 48;
-      if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-
-      const idx = SERVICES_DATA.findIndex((c) => c.id === activeCategoryId);
-      // Physical swipe direction, same convention as OS-level carousels:
-      // swipe left -> next category, swipe right -> previous, regardless
-      // of text direction.
-      if (dx < 0 && idx < SERVICES_DATA.length - 1) switchCategory(SERVICES_DATA[idx + 1].id);
-      else if (dx > 0 && idx > 0) switchCategory(SERVICES_DATA[idx - 1].id);
-    }
-    panelsEl.addEventListener("touchend", onTouchEnd);
-    panelsEl.addEventListener("touchcancel", () => { tracking = false; axis = null; });
-  }
-
-  function filterServices(query) {
-    const q = (query || "").trim().toLowerCase();
-    const noResultsEl = $("#servicesNoResults");
-    let anyVisibleGlobal = false;
-
-    // matchingSubIndexes[cat.id] = indexes of that category's subcategories
-    // that have at least one row matching the query.
-    const matchingSubIndexes = {};
-
-    SERVICES_DATA.forEach((cat) => {
-      const panel = $(`.services-panel[data-cat-panel="${cat.id}"]`);
-      if (!panel) return;
-      const matches = [];
-
-      cat.subcategories.forEach((sub, i) => {
-        const subPanel = $(`.sub-panel[data-sub-panel="${i}"]`, panel);
-        const sidebarItem = $(`.sidebar-item[data-sub-index="${i}"]`, panel);
-        if (!subPanel) return;
-        let subHasMatch = false;
-        $$(".service-row", subPanel).forEach((row) => {
-          const match = !q || row.getAttribute("data-search").includes(q);
-          row.classList.toggle("hidden-by-search", !match);
-          if (match) subHasMatch = true;
-        });
-        if (sidebarItem) sidebarItem.hidden = Boolean(q) && !subHasMatch;
-        if (subHasMatch) matches.push(i);
-      });
-
-      matchingSubIndexes[cat.id] = matches;
-      const categoryHasMatch = matches.length > 0;
-
-      const tabBtn = $(`.services-tab[data-cat="${cat.id}"]`);
-      if (tabBtn) tabBtn.style.display = q && !categoryHasMatch ? "none" : "";
-      if (categoryHasMatch) anyVisibleGlobal = true;
+      if (Math.abs(dx) < 48) return;
+      const index = SERVICES_DATA.findIndex((c) => c.id === activeCategoryId);
+      if (dx < 0 && index < SERVICES_DATA.length - 1) switchCategory(SERVICES_DATA[index + 1].id);
+      else if (dx > 0 && index > 0) switchCategory(SERVICES_DATA[index - 1].id);
     });
-
-    // Hiding/showing tabs above just reflowed the tab bar — the gold pill
-    // indicator is positioned in JS against measured tab coordinates, so it
-    // needs to be told to re-measure or it's left floating over whatever
-    // used to be there.
-    positionTabIndicator($(".services-tab.active"));
-
-    if (q) {
-      // If the active category tab now has no matches, jump to the first
-      // one that does — same as before.
-      let targetCatId = activeCategoryId;
-      if (!(matchingSubIndexes[activeCategoryId] || []).length) {
-        const firstMatchCat = SERVICES_DATA.find((cat) => (matchingSubIndexes[cat.id] || []).length);
-        if (firstMatchCat) {
-          targetCatId = firstMatchCat.id;
-          activeCategoryId = targetCatId;
-          updateTabsUI();
-          $$(".services-panel").forEach((p) => p.classList.toggle("active", p.getAttribute("data-cat-panel") === activeCategoryId));
-        }
-      }
-
-      // Within whichever category ends up active, make sure the selected
-      // subcategory (sidebar item + content pane) is one that actually has
-      // a match — jumping to the first one that does, no stagger while
-      // typing.
-      const targetMatches = matchingSubIndexes[targetCatId] || [];
-      const targetCat = SERVICES_DATA.find((c) => c.id === targetCatId);
-      if (targetMatches.length) {
-        const currentSub = targetCat ? getActiveSubIndex(targetCat) : 0;
-        if (!targetMatches.includes(currentSub)) {
-          switchSubcategory(targetCatId, targetMatches[0], { animate: false });
-        } else {
-          const panel = $(`.services-panel[data-cat-panel="${targetCatId}"]`);
-          const activeSubPanel = panel && $(".sub-panel.active", panel);
-          if (activeSubPanel) ensureRowsVisible(activeSubPanel);
-        }
-      }
-    }
-
-    if (noResultsEl) noResultsEl.hidden = anyVisibleGlobal || !q;
+    panelEl.addEventListener("touchcancel", () => { tracking = false; axis = null; });
   }
 
   /* ---------------------------------------------------------------------
@@ -849,11 +1103,6 @@
       if (isInViewport(g.el)) staggerReveal(g.el.children, { step: g.step });
     });
 
-    const activePanel = $(".services-panel.active");
-    if (activePanel && isInViewport(activePanel)) {
-      staggerReveal($$(".sidebar-item", activePanel), { step: 60 });
-      revealActiveRows(activePanel);
-    }
   }
 
   function initStaggerGroups() {
@@ -874,37 +1123,10 @@
       io.observe(g.el);
     });
 
-    // The Services section's active tab panel also gets a scroll-triggered
-    // cascade, matching the others.
-    const panelsEl = $("#servicesPanels");
-    if (panelsEl && "IntersectionObserver" in window) {
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const activePanel = $(".services-panel.active");
-            staggerReveal($$(".sidebar-item", activePanel), { step: 60 });
-            revealActiveRows(activePanel);
-          }
-        });
-      }, { threshold: 0.15, rootMargin: "0px 0px -60px 0px" });
-      io.observe(panelsEl);
-    }
-  }
-
-  /* ---------------------------------------------------------------------
-     Tab indicator — recalculate whenever the layout it's measured against
-     could have changed: viewport resize, or web fonts swapping in (which
-     can reflow button widths after the indicator's first measurement).
-     --------------------------------------------------------------------- */
-  function initTabIndicatorSync() {
-    let resizeRaf = null;
-    window.addEventListener("resize", () => {
-      if (resizeRaf) cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(() => positionTabIndicator($(".services-tab.active")));
-    });
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => positionTabIndicator($(".services-tab.active")));
-    }
+    // The Services menu is deliberately not in this list — its cards run
+    // their own entrance on every category/subcategory switch (see
+    // animatePanelIn), and a second cascade on top of that reads as two
+    // animations fighting each other.
   }
 
   /* ---------------------------------------------------------------------
@@ -917,15 +1139,15 @@
       setLanguage(currentLang === "en" ? "ar" : "en");
     });
 
-    $("#serviceSearch").addEventListener("input", (e) => filterServices(e.target.value));
+    indexServices();
 
     initHeader();
-    setLanguage(currentLang);
+    setLanguage(currentLang);          // renders the menu for the first time
+    applyServicesHash({ scroll: true }); // #hair/hair-style deep links
+    initServicesMenu();
     initScrollReveal();
     initStaggerGroups();
-    initTabsKeyboardNav();
     initServicesSwipe();
-    initTabIndicatorSync();
   }
 
   document.addEventListener("DOMContentLoaded", init);

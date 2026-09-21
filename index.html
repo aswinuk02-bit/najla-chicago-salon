@@ -35,7 +35,7 @@
 <!-- ================= HEADER ================= -->
 <header class="site-header" id="siteHeader">
   <div class="container header-inner">
-    <a href="#home" class="brand" data-i18n-aria="nav.home">
+    <a href="#home" class="brand" data-i18n-aria-label="nav.home" aria-label="Home">
       <img src="assets/images/optimized/logo.jpeg" alt="Najla Chicago Salon logo" class="brand-logo">
       <span class="brand-name" data-i18n="siteNameShort">Najla Chicago</span>
     </a>
@@ -135,18 +135,52 @@
       <h2 data-i18n="services.title">Services &amp; Treatments</h2>
       <p class="section-subtitle" data-i18n="services.subtitle">Explore our full range of treatments.</p>
     </div>
+  </div>
 
-    <div class="services-search reveal">
-      <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input type="text" id="serviceSearch" placeholder="Search a service…" data-i18n-placeholder="services.searchPlaceholder">
+  <!-- Category pills — sticky under the header. Full-bleed so the sticky
+       bar's backdrop spans the viewport while the pills stay in the grid. -->
+  <div class="services-pillbar" id="servicesPillbar">
+    <div class="container">
+      <div class="services-tabs" id="servicesTabs" role="tablist" data-i18n-aria-label="services.categoriesLabel" aria-label="Service categories">
+        <span class="tab-indicator" id="tabIndicator" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="services-menu reveal" id="servicesMenu">
+      <!-- Subcategory rail: a vertical sidebar ≥768px, a horizontal chip
+           row below it. Same buttons either way. -->
+      <div class="services-rail-wrap">
+        <div class="services-rail" id="servicesRail" data-i18n-aria-label="services.subcategoriesLabel" aria-label="Subcategories"></div>
+        <span class="services-rail-fade" aria-hidden="true"></span>
+      </div>
+
+      <div class="services-panel" id="servicesPanel" role="tabpanel" tabindex="-1">
+        <div class="svc-panel-head">
+          <div class="svc-panel-heading">
+            <h3 class="svc-panel-title" id="svcPanelTitle"></h3>
+            <p class="svc-panel-count" id="svcPanelCount"></p>
+          </div>
+          <div class="svc-search">
+            <svg class="svc-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input type="search" id="serviceSearch" data-i18n-placeholder="services.searchPlaceholder" data-i18n-aria-label="services.searchLabel" placeholder="Search in this category…" aria-label="Search in this category">
+            <button type="button" class="svc-search-clear" id="serviceSearchClear" data-i18n-aria-label="services.searchClear" aria-label="Clear search" hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="svc-panel-body" id="svcPanelBody"></div>
+      </div>
     </div>
 
-    <div class="services-tabs reveal" id="servicesTabs" role="tablist"></div>
-
-    <div class="services-panels" id="servicesPanels" aria-live="polite"></div>
-
-    <p class="services-no-results" id="servicesNoResults" hidden data-i18n="services.noResults">No services match your search.</p>
+    <p class="sr-only" id="servicesLive" aria-live="polite"></p>
   </div>
+
+  <!-- "Build your visit" summary — only rendered when
+       SERVICES_CONFIG.bookingMode is on (js/services-data.js). -->
+  <aside class="visit-summary" id="visitSummary" data-i18n-aria-label="services.visitTitle" aria-label="Your visit" hidden></aside>
 </section>
 
 <!-- ================= GALLERY ================= -->
@@ -283,6 +317,7 @@
 </a>
 
 <script src="js/translations.js"></script>
+<script src="js/services-data.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

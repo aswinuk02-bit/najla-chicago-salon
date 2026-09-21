@@ -38,12 +38,13 @@ build configuration (no build command, output directory = project root).
 | **About text & stats** | `js/translations.js` → `UI.en.about` / `UI.ar.about` |
 | **Testimonials** | `js/translations.js` → `TESTIMONIALS` array |
 | **Gallery photos** | Uses your real photos only (no external placeholder service) — `js/main.js` → `CONFIG.galleryImages`, each entry `{ file, alt: { en, ar } }` pointing at a file in `assets/images/optimized/`. Add/remove/reorder entries there; drop new originals in `assets/images/` and compress them into `assets/images/optimized/` first (see the compression note below). |
-| **Service names** | `js/translations.js` → `SERVICES_DATA`. Everything is grouped by top-level category (Hair, Waxing & Threading, Skin, Nails, Eyelash & Eyebrow, Massage, Moroccan Bath, Henna) and then by subcategory. Add, remove or rename items here — the site re-renders from this single source of truth in both languages. Each item still carries a `price` field from the original price list, but the site no longer displays it (see below); it's dormant data, not deleted, in case pricing comes back later. |
+| **Services (all of them)** | `js/services-data.js` → `SERVICES_DATA`, with the menu's behaviour in `SERVICES_CONFIG` at the top of the same file. See [The Services menu](#the-services-menu) below. |
 
 ## How the bilingual system works
 
-- All UI copy and service data lives in `js/translations.js`, split into an
-  `en` and `ar` version of every string (no duplicated HTML per language).
+- All UI copy lives in `js/translations.js` and all service data in
+  `js/services-data.js`, each split into an `en` and `ar` version of every
+  string (no duplicated HTML per language).
 - The language toggle (`EN` / `عربي`) in the header calls `setLanguage()` in
   `js/main.js`, which:
   - Sets `lang` and `dir` on `<html>` (`dir="rtl"` flips the entire layout,
@@ -53,21 +54,81 @@ build configuration (no build command, output directory = project root).
     testimonials, opening hours) from the translation data.
   - Persists the choice to `localStorage` so it's remembered on the next
     visit.
-- Pricing is intentionally not rendered — `renderServices()` in `js/main.js`
-  only outputs each item's name (and its "Add-on" tag where applicable),
-  ignoring the `price` field still present in `SERVICES_DATA`.
+- Pricing is intentionally not rendered — see `showPrices` under
+  [The Services menu](#the-services-menu).
 
 ## Project structure
 
 ```
 /
 ├── index.html              Page markup / section structure
-├── css/style.css           All styling (responsive, RTL-aware, light/dark)
-├── js/translations.js      Bilingual UI strings + full service list
-├── js/main.js              Language switching, RTL, tabs/accordion, search, WhatsApp links
+├── css/style.css           All styling (responsive, RTL-aware)
+├── js/translations.js      Bilingual UI strings (nav, sections, buttons, labels)
+├── js/services-data.js     Every service + the Services menu configuration
+├── js/main.js              Language switching, RTL, Services menu, search, WhatsApp links
 ├── assets/images/          Logo + downloaded photos (originals) + optimized/ (web-sized copies actually used by the site)
 └── README.md
 ```
+
+## The Services menu
+
+Category pills (sticky under the header) → a subcategory rail (a sidebar
+from 768px up, a horizontal chip row below) → a panel of service cards.
+
+### Editing services
+
+Everything is in `js/services-data.js`. A service is a compact tuple:
+
+```js
+["Normal Hair Wash", "غسيل شعر عادي", 40]
+//  English name      Arabic name      price
+```
+
+Optional extras go in a 4th slot, and anything you leave out simply isn't
+rendered — no blanks, no "undefined":
+
+```js
+["Hair Spa", "سبا الشعر", 85, {
+  durationMinutes: 45,                              // renders "45 min"
+  description: { en: "…", ar: "…" },                // one line under the name
+  priceFrom: true,                                  // renders "from AED 85"
+  popular: true,                                    // eligible for the "popular" helper card
+  addOnFor: { en: "Hair Wash", ar: "غسيل الشعر" }   // add-ons only; defaults to the subcategory
+}]
+```
+
+Add-ons are detected from the name (anything starting "Add On" / "إضافة"),
+grouped at the bottom of the panel under an **Add-ons** heading with a pill
+badge and a "Add-on for …" line. Set `isAddOn: true/false` to override.
+
+Ids and deep-link slugs are generated from the English name
+(`#hair/hair-style`), so renaming a service changes its link — pass an
+explicit `id` if you need one pinned.
+
+### Configuration (`SERVICES_CONFIG`)
+
+| Setting | Default | What it does |
+|---|---|---|
+| `currency` | `{ en: "AED", ar: "د.إ" }` | Currency label; placed before the amount in English, after it in Arabic. |
+| `showPrices` | `false` | Prices exist for every service but are hidden, as pricing was deliberately taken off the public site. Flip to `true` to show them on cards and in "Build your visit" totals. |
+| `showDurations` | `true` | Durations render only where a service declares `durationMinutes`. None do yet, so nothing renders until you add them. |
+| `bookingMode` | `false` | "Build your visit" — see below. |
+| `helperCard` | `{ enabled: true, minServices: 8, type: "whatsapp" }` | The soft card under short subcategories, so a 6-service panel doesn't end in dead space. `type: "popular"` lists that subcategory's `popular: true` services instead. Set `enabled: false` to switch off. |
+
+### "Build your visit" (optional, off by default)
+
+Set `bookingMode: true` in `SERVICES_CONFIG`. Every card swaps its **Book**
+button for **Add**, and a running summary appears — a panel at the bottom
+corner on desktop, a docked bar on mobile — listing the selection with a
+total time (when the services have durations) and total price (when
+`showPrices` is on and every selected price is a plain number). **Book on
+WhatsApp** hands the whole list off as a pre-filled message.
+
+### Missing data
+
+No service currently has a `durationMinutes` or a `description` — **all 231**
+would need them if you want those on the cards. Nothing was invented to fill
+the gap; the card just omits the element. Prices are present for all 231.
 
 ## Photo backgrounds — which file went where
 
@@ -132,35 +193,40 @@ backgrounds will noticeably slow the page down, especially on mobile.
   `initScrollReveal()` in `js/main.js` uses an `IntersectionObserver` to add
   `.in-view` the first time each one enters the viewport, which triggers the
   CSS transition. Respects `prefers-reduced-motion`.
-- **Staggered card cascade** (the about-stats boxes, gallery tiles,
-  testimonial cards, and the Services sidebar items): each item carries a
-  `.reveal-item` class baked in from the moment it's rendered — it does *not*
-  get added right before revealing, because doing both back-to-back lets the
-  browser's CSS transition "reversal shortening" collapse the animation to
-  near-zero duration. `staggerReveal()` in `js/main.js` sets an incrementing
-  `transition-delay` per item, then adds `.in-view`, producing a
-  cards-pop-in-one-after-another effect. Triggered once on scroll (via the
-  same `IntersectionObserver` pattern) for the about/gallery/testimonials
-  grids and the default Services tab; it also **replays every time a
-  Services tab is switched** (see `revealSidebarInstant()` /
-  `switchCategory()` in `js/main.js`) — inspired by the cascading icon/card
-  grids on [kuruvaislandresort.com](https://kuruvaislandresort.com/), which
-  use WOW.js + animate.css with the same incremental-delay approach.
+- **Staggered card cascade** (the about-stats boxes, gallery tiles and
+  testimonial cards): each item carries a `.reveal-item` class baked in from
+  the moment it's rendered — it does *not* get added right before revealing,
+  because doing both back-to-back lets the browser's CSS transition
+  "reversal shortening" collapse the animation to near-zero duration.
+  `staggerReveal()` in `js/main.js` sets an incrementing `transition-delay`
+  per item, then adds `.in-view`, producing a cards-pop-in-one-after-another
+  effect — inspired by the cascading icon/card grids on
+  [kuruvaislandresort.com](https://kuruvaislandresort.com/), which use
+  WOW.js + animate.css with the same incremental-delay approach.
+- **Services menu motion** is separate from the above and lives in
+  `animatePanelIn()`: service cards rise and fade in with a stagger
+  (`--svc-stagger`, capped by `--svc-stagger-total`), and switching main
+  category slides the panel in from the side the tab sits on. Durations,
+  easing and travel are the `--svc-*` variables on `.services` in
+  `css/style.css`. Both sliding indicators (pill + sidebar) move with
+  `transform` only.
 - **Hover lift**: testimonial cards and the about-stats boxes lift slightly
   on hover (`transform: translateY(-6px)`), matching the interactive card
   feel of the reference site.
 
 ## Notes
 
-- The Services section is organized as tabs (top-level categories, e.g.
-  Hair, Skin, Nails) containing a sidebar/content menu — subcategory names
-  listed down the left (`.services-sidebar`), the selected one's items shown
-  in the panel on the right (`.services-content`) — so the ~300-item service
-  list stays scannable instead of one long page. Stacks into a horizontally
-  scrollable chip row above the content on narrow screens (<768px). The
-  search box filters across both languages' service names live, hiding
-  non-matching subcategories from the sidebar and jumping to the first
-  category/subcategory that still has a match.
+- The Services menu is documented in its own section above. Accessibility
+  notes: the category pills are a real tablist (`role="tablist"/"tab"`,
+  `aria-selected`, roving `tabindex`, Left/Right/Home/End), the rail items
+  are buttons carrying `aria-current` with Up/Down/Home/End, result counts
+  are announced through an `aria-live="polite"` region, and the panel holds
+  its measured height across a swap so nothing jumps. Deep links
+  (`#hair/hair-style`) are written on interaction and restored on reload;
+  plain anchors like `#services` are left alone.
+- The in-panel search filters the **current category** in both languages,
+  hides non-matching subcategories from the rail, and jumps to the first
+  subcategory that still has a match.
 - Each category no longer has its own background photo behind the menu (a
   previous design) — those photos (`hair-2.jpg`, `waxing.jpg`, `skin.jpg`,
   etc.) are still in active use via the **Gallery** grid, just not here.

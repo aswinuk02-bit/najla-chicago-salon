@@ -14,7 +14,7 @@
      light surfaces (eyebrows, labels, stat values); 500/600 are for
      buttons, gradients and larger/decorative use; 300/100 are light
      accents used on dark surfaces (hero photo, footer). */
-  --gold-700: #8f4f3f;
+  --gold-700: #9c5644;
   --gold-600: #b76e5a;
   --gold-500: #c98874;
   --gold-300: #dba28f;
@@ -23,9 +23,22 @@
 
   /* Text */
   --ink:        #3a2b27;
-  --ink-soft:   #7d6a63;
+  --ink-soft:   #6e5b54;
   --black-text: #2a1512;
   --white:      #ffffff;
+
+  /* Semantic aliases — the names the Services menu is written against.
+     Same values as above, so there's still one palette, not two:
+       --accent        #b76e5a  pill fill, hovers, decorative accents
+       --accent-strong #9c5644  buttons, links, small text (AA on --bg,
+                                --surface and white: 5.5 / 4.0 / 5.5:1)
+       --text          #3a2b27
+       --text-muted    #6e5b54  (4.7:1 on --surface, 6.4:1 on white) */
+  --accent:        var(--gold-600);
+  --accent-strong: var(--gold-700);
+  --text:          var(--ink);
+  --text-muted:    var(--ink-soft);
+  --surface-nude:  var(--surface-alt);
 
   /* Light text for content that sits directly on a dark photo overlay
      (Hero, Services banner) — kept separate from --ink so the body theme
@@ -547,272 +560,628 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
 .services .section-heading h2 { color: var(--on-photo); }
 .services .section-heading .section-subtitle { color: var(--on-photo-soft); }
 
-.services-search {
-  position: relative;
-  max-width: 480px;
-  margin: 0 auto 40px;
+/* ---------- Services menu ----------
+   Category pills (sticky) → subcategory rail (sidebar ≥768px, chip row
+   below) → panel of service cards. Motion is transform/opacity only; all
+   durations, easing and travel distances are the variables below. */
+.services {
+  --svc-duration: 320ms;
+  --svc-duration-fast: 180ms;
+  --svc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --svc-stagger: 50ms;
+  --svc-stagger-total: 400ms;
+  --svc-rise: 14px;
+  --svc-slide: 28px;
+  --svc-radius: 24px;
+  --svc-radius-sm: 16px;
+  --svc-shadow: 0 10px 34px rgba(139, 79, 63, 0.09);
+  --svc-shadow-lift: 0 14px 28px rgba(139, 79, 63, 0.16);
+  --svc-hairline: rgba(183, 110, 90, 0.16);
 }
-.services-search input {
-  width: 100%;
-  padding: 14px 20px 14px 48px;
-  border-radius: 50px;
-  border: 1.5px solid var(--gold-700);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+/* Sticky pill bar. Full-bleed so the blurred backdrop spans the viewport
+   while the pills themselves stay on the container grid. */
+.services-pillbar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 20;
+  padding: 14px 0;
+  margin-bottom: 30px;
+  background: rgba(255, 249, 245, 0.86);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
 }
-.services-search input::placeholder { color: var(--ink-soft); }
-html[dir="rtl"] .services-search input { padding: 14px 48px 14px 20px; }
-.services-search input:focus { border-color: var(--gold-600); box-shadow: 0 0 0 4px rgba(183, 110, 90, 0.18); }
-.search-icon {
-  position: absolute;
-  left: 18px; top: 50%; transform: translateY(-50%);
-  color: var(--gold-700);
-  pointer-events: none;
-}
-html[dir="rtl"] .search-icon { left: auto; right: 18px; }
 
 .services-tabs {
   position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 44px;
+  gap: 8px;
 }
-/* Sliding active-tab pill — positioned/sized from JS (measured against the
-   real tab it sits behind), animated only via transform so it stays smooth
-   on cheap phones. Width/height are assigned directly (not transitioned):
-   see the motion-rules note in main.js for why. */
+/* Sliding pill highlight — positioned/sized from JS against the real tab
+   it sits behind, moved with transform only. Width/height are assigned
+   directly rather than transitioned: animating those is what actually
+   costs layout on cheap phones. */
 .tab-indicator {
   position: absolute;
   top: 0; left: 0;
   border-radius: 50px;
-  background: linear-gradient(135deg, var(--gold-600), var(--gold-500));
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--motion-indicator-duration) var(--motion-ease);
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgba(139, 79, 63, 0.22);
+  transition: transform var(--svc-duration) var(--svc-ease);
   will-change: transform;
   pointer-events: none;
   z-index: 0;
 }
 .tab-indicator.no-anim { transition: none; }
+
 .services-tab {
   position: relative;
   z-index: 1;
+  min-height: 44px;
   padding: 10px 20px;
   border-radius: 50px;
   font-weight: 500;
   font-size: 0.9rem;
-  background: var(--surface);
-  border: 1.5px solid var(--surface-alt);
-  color: var(--ink-soft);
-  transition: color 0.2s ease, border-color 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.services-tab:hover { border-color: var(--gold-600); color: var(--gold-700); }
-.services-tab.active {
+  color: var(--text-muted);
   background: transparent;
-  border-color: transparent;
-  color: var(--black-text);
+  flex-shrink: 0;
+  transition: color var(--svc-duration-fast) var(--svc-ease);
 }
-@media (prefers-reduced-motion: reduce) {
-  .tab-indicator { transition: none; }
+html[dir="rtl"] .services-tab { font-family: var(--font-arabic); }
+.services-tab:hover { color: var(--accent-strong); }
+.services-tab.active { color: var(--white); font-weight: 600; }
+.services-tab:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
-@media (max-width: 640px) {
-  /* A single scrollable row of chips reads better than wrapped rows once
-     there isn't room for ~8 tabs side by side; it's also what makes swipe
-     navigation (main.js) and "scroll the active tab into view" meaningful. */
+/* ---------- Menu shell ---------- */
+.services-menu {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* ---------- Subcategory rail ---------- */
+.services-rail-wrap {
+  position: sticky;
+  top: calc(var(--header-h) + 88px);
+}
+.services-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  max-height: min(62vh, 540px);
+  overflow-y: auto;
+  border-radius: var(--svc-radius);
+  background: var(--surface-alt);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 86, 68, 0.3) transparent;
+}
+.services-rail::-webkit-scrollbar { width: 6px; }
+.services-rail::-webkit-scrollbar-thumb {
+  background: rgba(156, 86, 68, 0.28);
+  border-radius: 50px;
+}
+/* Soft fade so a scrollable rail reads as "more below" rather than a hard cut. */
+.services-rail-fade {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 44px;
+  pointer-events: none;
+  border-radius: 0 0 var(--svc-radius) var(--svc-radius);
+  background: linear-gradient(to top, var(--surface-alt) 20%, rgba(235, 217, 207, 0));
+}
+
+/* The white card that slides between rail items; the accent bar rides on
+   its inline-start edge so it mirrors under RTL. */
+.rail-indicator {
+  position: absolute;
+  top: 0; left: 0;
+  border-radius: var(--svc-radius-sm);
+  background: var(--white);
+  box-shadow: 0 6px 18px rgba(139, 79, 63, 0.14);
+  transition: transform var(--svc-duration) var(--svc-ease);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 0;
+}
+.rail-indicator::before {
+  content: "";
+  position: absolute;
+  inset-block: 11px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.rail-indicator.no-anim { transition: none; }
+
+.rail-item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 14px;
+  border-radius: var(--svc-radius-sm);
+  font-size: 0.89rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-align: start;
+  transition: color var(--svc-duration-fast) var(--svc-ease);
+}
+html[dir="rtl"] .rail-item { font-family: var(--font-arabic); }
+.rail-item[hidden] { display: none; }
+.rail-item:hover { color: var(--text); }
+.rail-item.active { color: var(--accent-strong); font-weight: 600; }
+.rail-item:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: -2px;
+  border-radius: var(--svc-radius-sm);
+}
+.rail-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-item-count {
+  flex-shrink: 0;
+  min-width: 22px;
+  padding: 2px 7px;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.72);
+  transition: color var(--svc-duration-fast) var(--svc-ease),
+              background var(--svc-duration-fast) var(--svc-ease);
+}
+.rail-item.active .rail-item-count {
+  color: var(--accent-strong);
+  background: var(--gold-100);
+}
+
+/* ---------- Service panel ---------- */
+.services-panel {
+  min-width: 0;
+  padding: 22px 24px 26px;
+  border-radius: var(--svc-radius);
+  background: var(--white);
+  box-shadow: var(--svc-shadow);
+}
+.services-panel:focus { outline: none; }
+
+.svc-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--svc-hairline);
+}
+.svc-panel-heading { flex: 1; min-width: 0; }
+.svc-panel-title { margin: 0; font-size: 1.3rem; color: var(--text); }
+html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight: 700; }
+.svc-panel-count {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.svc-search {
+  position: relative;
+  flex-shrink: 0;
+  width: min(258px, 100%);
+}
+.svc-search input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 40px;
+  border-radius: 50px;
+  border: 1px solid rgba(183, 110, 90, 0.24);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color var(--svc-duration-fast) var(--svc-ease),
+              box-shadow var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-search input::placeholder { color: var(--text-muted); }
+.svc-search input::-webkit-search-cancel-button { display: none; }
+.svc-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(183, 110, 90, 0.16);
+}
+.svc-search-icon {
+  position: absolute;
+  inset-inline-start: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent-strong);
+  pointer-events: none;
+}
+.svc-search-clear {
+  position: absolute;
+  inset-inline-end: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px; height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: color var(--svc-duration-fast) var(--svc-ease),
+              background var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-search-clear[hidden] { display: none; }
+.svc-search-clear:hover { color: var(--accent-strong); background: var(--surface-alt); }
+
+/* Directional slide when the main category changes; --svc-dir is set from
+   JS (-1 / 0 / 1) and already accounts for RTL. */
+.svc-panel-body.is-entering {
+  animation: svc-enter var(--svc-duration) var(--svc-ease) both;
+}
+@keyframes svc-enter {
+  from { opacity: 0; transform: translateX(calc(var(--svc-dir, 0) * var(--svc-slide))); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Service cards ---------- */
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.svc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 16px 18px;
+  border-radius: var(--svc-radius-sm);
+  background: var(--bg);
+  opacity: 0;
+  transform: translateY(var(--svc-rise));
+  transition: opacity var(--svc-duration) var(--svc-ease),
+              transform var(--svc-duration-fast) var(--svc-ease),
+              box-shadow var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-card.is-in { opacity: 1; transform: none; }
+.svc-card.is-in:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--svc-shadow-lift);
+}
+.svc-card.is-addon { background: rgba(243, 221, 211, 0.52); }
+
+.svc-card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.svc-tag {
+  padding: 3px 9px;
+  border-radius: 50px;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+html[dir="rtl"] .svc-tag { letter-spacing: normal; }
+.svc-tag-addon { background: var(--accent-strong); color: var(--white); }
+.svc-tag-popular { background: var(--gold-100); color: var(--accent-strong); }
+
+.svc-card-name {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--text);
+}
+html[dir="rtl"] .svc-card-name { font-family: var(--font-arabic); font-weight: 700; }
+.svc-card-parent,
+.svc-card-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.svc-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+.svc-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.svc-card-meta-spacer { flex: 1; }
+
+.svc-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform var(--svc-duration-fast) var(--svc-ease),
+              background var(--svc-duration-fast) var(--svc-ease),
+              color var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-book {
+  background: var(--accent-strong);
+  color: var(--white);
+}
+.svc-book:hover { background: var(--accent); }
+.svc-add {
+  border: 1.5px solid var(--accent-strong);
+  color: var(--accent-strong);
+  background: transparent;
+}
+.svc-add:hover { background: var(--gold-100); }
+.svc-add.is-added { background: var(--accent-strong); color: var(--white); }
+.svc-action:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* ---------- Add-ons group ---------- */
+.svc-addons { margin-top: 28px; }
+.svc-addons-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+html[dir="rtl"] .svc-addons-title { font-family: var(--font-arabic); letter-spacing: normal; }
+.svc-addons-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--svc-hairline);
+}
+
+/* ---------- Helper card (fills a short subcategory) ---------- */
+.svc-helper {
+  margin-top: 22px;
+  padding: 22px 24px;
+  border-radius: var(--svc-radius-sm);
+  background: linear-gradient(135deg, rgba(235, 217, 207, 0.85), rgba(243, 221, 211, 0.45));
+  opacity: 0;
+  transform: translateY(var(--svc-rise));
+  transition: opacity var(--svc-duration) var(--svc-ease),
+              transform var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-helper.is-in { opacity: 1; transform: none; }
+.svc-helper-title {
+  margin: 0 0 6px;
+  font-size: 1.02rem;
+  color: var(--text);
+}
+html[dir="rtl"] .svc-helper-title { font-family: var(--font-arabic); font-weight: 700; }
+.svc-helper-text {
+  margin: 0 0 16px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+.svc-helper-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.svc-helper-list li {
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.7);
+}
+.svc-helper-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 50px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--accent-strong);
+  transition: background var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-helper-cta:hover { background: var(--accent); }
+
+.svc-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* ---------- "Build your visit" (SERVICES_CONFIG.bookingMode) ---------- */
+.visit-summary {
+  position: fixed;
+  z-index: 950;
+  inset-inline-start: 26px;
+  bottom: 26px;
+  width: min(320px, calc(100vw - 52px));
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: 0 18px 44px rgba(139, 79, 63, 0.22);
+}
+.visit-summary[hidden] { display: none; }
+.visit-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.visit-title { margin: 0; font-size: 1.02rem; color: var(--text); }
+html[dir="rtl"] .visit-title { font-family: var(--font-arabic); font-weight: 700; }
+.visit-count { font-size: 0.76rem; color: var(--text-muted); }
+.visit-empty { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+.visit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+.visit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--text);
+}
+.visit-remove {
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+}
+.visit-remove:hover { color: var(--accent-strong); background: var(--surface-alt); }
+.visit-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--svc-hairline);
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+.visit-total strong { color: var(--text); }
+.visit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.visit-book {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 50px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--white);
+  background: var(--accent-strong);
+}
+.visit-book:hover { background: var(--accent); }
+.visit-clear {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 50px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+.visit-clear:hover { color: var(--accent-strong); background: var(--surface-alt); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1023px) {
+  .services-menu { grid-template-columns: 200px minmax(0, 1fr); gap: 18px; }
+}
+
+/* Between 768 and ~1100 the sidebar is still there but the panel is too
+   narrow for two readable cards, so drop to one column early. */
+@media (min-width: 768px) and (max-width: 1099px) {
+  .svc-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 767px) {
+  /* Sidebar becomes a horizontal chip row so services get full width. */
+  .services-menu { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .services-rail-wrap { position: static; }
+  .services-rail {
+    flex-direction: row;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .services-rail::-webkit-scrollbar { display: none; }
+  .rail-item { flex: 0 0 auto; scroll-snap-align: center; }
+  .services-rail-fade { display: none; }
   .services-tabs {
     flex-wrap: nowrap;
     justify-content: flex-start;
     overflow-x: auto;
-    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     padding-bottom: 2px;
   }
   .services-tabs::-webkit-scrollbar { display: none; }
-}
+  .services-tab { scroll-snap-align: center; }
+  .services-panel { padding: 18px 16px 22px; border-radius: 20px; }
+  .svc-panel-head { gap: 12px; }
+  .svc-search { width: 100%; }
 
-.services-panel { display: none; }
-.services-panel.active { display: block; }
-
-/* Directional content slide between categories — old panel nudges out,
-   new panel slides in from the opposite edge, both combined with a fade.
-   --slide-dir is set from JS per switch: 1 = the new category is to the
-   right of the old one, -1 = to the left. */
-.services-panel.slide-out {
-  transition: transform var(--motion-exit-duration) var(--motion-ease), opacity var(--motion-exit-duration) var(--motion-ease);
-  transform: translateX(calc(var(--slide-dir, 1) * -1 * var(--motion-slide-distance)));
-  opacity: 0;
-}
-.services-panel.slide-in-start {
-  transition: none;
-  transform: translateX(calc(var(--slide-dir, 1) * var(--motion-slide-distance)));
-  opacity: 0;
-}
-.services-panel.slide-in {
-  transition: transform var(--motion-duration) var(--motion-ease), opacity var(--motion-duration) var(--motion-ease);
-  transform: translateX(0);
-  opacity: 1;
-}
-@media (prefers-reduced-motion: reduce) {
-  .services-panel.slide-out,
-  .services-panel.slide-in-start,
-  .services-panel.slide-in {
-    transition: none;
-    transform: none;
-    opacity: 1;
+  /* Summary docks to the bottom of the screen and lifts the FABs clear. */
+  .visit-summary {
+    inset-inline: 0;
+    bottom: 0;
+    width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px));
   }
+  body.has-visit-summary .whatsapp-fab { bottom: 210px; }
+  body.has-visit-summary .call-fab { bottom: 282px; }
 }
 
-/* Services menu — a persistent sidebar of subcategory names down the left,
-   the selected one's items shown in the panel on the right (like a
-   restaurant digital menu or a dashboard nav), replacing the previous
-   stacked accordion. One category's worth of subcategories/services;
-   .services-panel above still handles the top-level category slide. */
-.services-menu {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-md);
-  overflow: hidden;
+@media (max-width: 639px) {
+  .svc-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
-.services-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 18px 12px;
-  background: var(--surface-alt);
-  border-inline-end: 1px solid var(--border);
-}
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: var(--radius-md);
-  color: var(--ink-soft);
-  font-weight: 500;
-  font-size: 0.9rem;
-  text-align: start;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-html[dir="rtl"] .sidebar-item { font-family: var(--font-arabic); }
-.sidebar-item:hover { background: rgba(255, 255, 255, 0.6); color: var(--ink); }
-.sidebar-item.active {
-  background: var(--surface);
-  color: var(--gold-700);
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
-.sidebar-item-name { flex: 1; }
-.sidebar-item-count {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--ink-soft);
-  background: var(--surface-alt);
-  padding: 2px 9px;
-  border-radius: 50px;
-  flex-shrink: 0;
-}
-.sidebar-item.active .sidebar-item-count { background: var(--gold-100); color: var(--gold-700); }
-/* Same pitfall as .hero-video-toggle: our own unconditional `display:flex`
-   above has the same specificity as the UA `[hidden] { display: none }`
-   and would win on source order, defeating the search filter's use of the
-   `hidden` attribute to remove non-matching subcategories from the list. */
-.sidebar-item[hidden] { display: none; }
-
-.services-content {
-  padding: 8px 30px 26px;
-  min-width: 0;
-}
-.sub-panel { display: none; }
-.sub-panel.active { display: block; }
-.sub-panel-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 22px 0 14px;
-  border-bottom: 1px solid var(--surface-alt);
-  margin-bottom: 6px;
-}
-.sub-panel-title { font-size: 1.15rem; margin: 0; }
-html[dir="rtl"] .sub-panel-title { font-family: var(--font-arabic); font-weight: 700; }
-.sub-panel-count {
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-  margin-inline-start: auto;
-  flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-  .services-menu { grid-template-columns: 1fr; }
-  .services-sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    border-inline-end: none;
-    border-bottom: 1px solid var(--border);
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .services-sidebar::-webkit-scrollbar { display: none; }
-  .sidebar-item { flex-shrink: 0; }
-  .services-content { padding: 4px 18px 20px; }
-}
-
-/* Grid rather than a single column — without a price pinned to the right
-   edge, one item per full-width row would leave most of the row empty. */
-.service-list {
-  padding: 4px 0 14px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 0 28px;
-}
-.service-row {
-  display: flex;
-  align-items: center;
-  padding: 13px 0;
-  border-bottom: 1px dashed rgba(183, 110, 90, 0.25);
-  opacity: 0;
-  transform: translateY(var(--row-slide-distance));
-  transition: opacity var(--row-duration) var(--motion-ease), transform var(--row-duration) var(--motion-ease);
-}
-.service-row.row-in { opacity: 1; transform: translateY(0); }
 @media (prefers-reduced-motion: reduce) {
-  .service-row { transition: none; opacity: 1; transform: none; }
-}
-.service-name { color: var(--ink); font-size: 0.96rem; }
-.service-name .addon-tag {
-  display: inline-block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--gold-700);
-  border: 1px solid var(--gold-700);
-  border-radius: 50px;
-  padding: 1px 8px;
-  margin-inline-end: 8px;
-  vertical-align: middle;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.service-row.hidden-by-search { display: none; }
-
-.services-no-results {
-  text-align: center;
-  color: var(--ink-soft);
-  padding: 40px 0;
-  font-size: 1rem;
+  .tab-indicator,
+  .rail-indicator,
+  .svc-card,
+  .svc-helper,
+  .svc-action { transition: opacity 120ms linear; }
+  .svc-card,
+  .svc-helper { opacity: 1; transform: none; }
+  .svc-card.is-in:hover { transform: none; }
+  .svc-panel-body.is-entering { animation: none; }
 }
 
 /* ---------- Gallery ---------- */
