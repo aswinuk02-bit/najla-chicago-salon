@@ -91,11 +91,21 @@ Eyebrow, Massage, Moroccan Bath, Henna) carries an `image` field in
 }
 ```
 
-It renders as the panel header's backdrop (behind the title, count and
-search box), with the same light dark-overlay wash used for the Services
-banner and Hero elsewhere on the site, so light text stays readable over
-any photo. Swap the filename to change a category's photo; omit `image`
-entirely to fall back to a plain white header with no photo.
+It renders as the backdrop for the *entire* panel — header and card list
+both — with the same light dark-overlay wash used for the Services banner
+and Hero elsewhere on the site, so light text stays readable over any
+photo. Swap the filename to change a category's photo; omit `image`
+entirely to fall back to a plain white panel with opaque cards (no photo
+to show through).
+
+The panel itself is a fixed height (`clamp(420px, 74vh, 640px)`, shorter
+on mobile) with only the card list (`.svc-panel-body`) scrolling inside
+it — the header stays put. Service cards turn into translucent, blurred
+"frosted glass" tiles over the photo (`.services-panel.has-photo .svc-card`
+in `css/style.css`) rather than opaque tiles sitting on top of it; a soft
+fade appears at the bottom of the list only while there's actually more
+to scroll to (`updatePanelFade()` in `js/main.js`), and disappears once
+scrolled to the end.
 
 ### Editing services
 

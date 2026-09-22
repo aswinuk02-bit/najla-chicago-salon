@@ -758,36 +758,37 @@ html[dir="rtl"] .rail-item { font-family: var(--font-arabic); }
   background: var(--gold-100);
 }
 
-/* ---------- Service panel ---------- */
+/* ---------- Service panel ----------
+   Fixed height, photo backdrop (services-data.js → image, set from JS in
+   renderPanel), the header pinned at top and the card body scrolling
+   inside it. Because the photo sits on this outer element rather than on
+   the body that actually scrolls, it stays put — a static backdrop the
+   cards glide over — with no parallax trickery needed. */
 .services-panel {
+  position: relative;
   min-width: 0;
+  height: clamp(420px, 74vh, 640px);
+  display: flex;
+  flex-direction: column;
   border-radius: var(--svc-radius);
-  background: var(--white);
+  background-color: var(--white);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   box-shadow: var(--svc-shadow);
-  overflow: hidden; /* clips the head's photo to the panel's rounded corners */
+  overflow: hidden; /* clips the photo to the panel's rounded corners */
 }
 .services-panel:focus { outline: none; }
 
-/* Each category's own photo (services-data.js → image) sits behind this
-   header as a plain CSS background, set from JS in renderPanel() —
-   .has-photo just swaps the title/count/icon to the light on-photo
-   colors used everywhere else a photo sits directly behind text. */
 .svc-panel-head {
   position: relative;
+  z-index: 1;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
   padding: 22px 24px;
-  background-color: var(--surface-alt);
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  transition: background-image var(--svc-duration-fast) var(--svc-ease);
-}
-@media (max-width: 767px) {
-  .svc-panel-head { background-attachment: scroll; }
 }
 .svc-panel-icon {
   flex-shrink: 0;
@@ -801,7 +802,7 @@ html[dir="rtl"] .rail-item { font-family: var(--font-arabic); }
   transition: background var(--svc-duration-fast) var(--svc-ease),
               color var(--svc-duration-fast) var(--svc-ease);
 }
-.svc-panel-head.has-photo .svc-panel-icon {
+.services-panel.has-photo .svc-panel-icon {
   color: var(--on-photo);
   background: rgba(255, 255, 255, 0.22);
   backdrop-filter: blur(6px);
@@ -821,16 +822,54 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
   color: var(--text-muted);
   transition: color var(--svc-duration-fast) var(--svc-ease);
 }
-.svc-panel-head.has-photo .svc-panel-title {
+.services-panel.has-photo .svc-panel-title {
   color: var(--on-photo);
   text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
 }
-.svc-panel-head.has-photo .svc-panel-count {
+.services-panel.has-photo .svc-panel-count {
   color: var(--on-photo-soft);
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
 }
 
-.svc-panel-body { padding: 20px 24px 26px; }
+/* The scrollable body — fills whatever height the header leaves inside
+   the panel's fixed height. min-height:0 is the part that's easy to
+   forget: without it a flex child refuses to shrink below its content
+   size, and the scrollbar never appears. */
+.svc-panel-body {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 24px 26px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 86, 68, 0.3) transparent;
+}
+.svc-panel-body::-webkit-scrollbar { width: 6px; }
+.svc-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(156, 86, 68, 0.28);
+  border-radius: 50px;
+}
+/* Soft fade at the foot of the panel so a scrollable body reads as "more
+   below" rather than a hard cut — same trick as .services-rail-fade.
+   A sibling of .svc-panel-body, not a pseudo-element on it, so it stays
+   pinned while the body scrolls underneath it. */
+.svc-panel-fade {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  bottom: 0;
+  height: 56px;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(36, 23, 19, 0.16), rgba(36, 23, 19, 0));
+  opacity: 0;
+  transition: opacity var(--svc-duration-fast) var(--svc-ease);
+}
+/* Only shown once JS (updatePanelFade in main.js) confirms the body
+   actually overflows — a fade with nothing left to scroll to reads as a
+   rendering glitch, not an affordance. */
+.svc-panel-fade.is-visible { opacity: 1; }
 
 .svc-search {
   position: relative;
@@ -856,13 +895,17 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(183, 110, 90, 0.16);
 }
-/* Extra lift so the search field stays crisply separated from a busy
-   photo edge, rather than relying on its 1px border alone. */
-.svc-panel-head.has-photo .svc-search input {
+/* Frosted glass over a photo — translucent instead of the opaque --bg
+   fill, plus extra lift so it stays crisply separated from a busy photo
+   edge rather than relying on its 1px border alone. */
+.services-panel.has-photo .svc-search input {
+  background: rgba(255, 249, 245, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22);
 }
-.svc-panel-head.has-photo .svc-search input:focus {
+.services-panel.has-photo .svc-search input:focus {
   box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22), 0 0 0 3px rgba(183, 110, 90, 0.28);
 }
 .svc-search-icon {
@@ -926,6 +969,27 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
               border-color var(--svc-duration-fast) var(--svc-ease);
 }
 .svc-card.is-in:hover { border-color: rgba(183, 110, 90, 0.34); }
+
+/* Frosted glass over a photo — the card becomes a translucent, blurred
+   chip the backdrop shows through, rather than an opaque tile sitting on
+   top of it. Conditional on .has-photo: without a photo behind it there's
+   nothing to show through, so the opaque --bg fill above is what shows. */
+.services-panel.has-photo .svc-card {
+  background: rgba(255, 249, 245, 0.6);
+  border-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.services-panel.has-photo .svc-card.is-in:hover {
+  background: rgba(255, 249, 245, 0.78);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.services-panel.has-photo .svc-card.is-addon {
+  background: rgba(243, 221, 211, 0.58);
+}
+.services-panel.has-photo .svc-card.is-addon.is-in:hover {
+  background: rgba(243, 221, 211, 0.75);
+}
 
 .svc-card-icon {
   flex-shrink: 0;
@@ -1045,6 +1109,15 @@ html[dir="rtl"] .svc-addons-title { font-family: var(--font-arabic); letter-spac
   height: 1px;
   background: var(--svc-hairline);
 }
+/* This heading sits bare in the gap between card rows, not inside a
+   card, so it needs its own on-photo treatment for contrast. */
+.services-panel.has-photo .svc-addons-title {
+  color: var(--on-photo);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+.services-panel.has-photo .svc-addons-title::after {
+  background: rgba(255, 255, 255, 0.35);
+}
 
 /* ---------- Helper card (fills a short subcategory) ---------- */
 .svc-helper {
@@ -1056,6 +1129,12 @@ html[dir="rtl"] .svc-addons-title { font-family: var(--font-arabic); letter-spac
   transform: translateY(var(--svc-rise));
   transition: opacity var(--svc-duration) var(--svc-ease),
               transform var(--svc-duration-fast) var(--svc-ease);
+}
+.services-panel.has-photo .svc-helper {
+  background: linear-gradient(135deg, rgba(235, 217, 207, 0.62), rgba(243, 221, 211, 0.4));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .svc-helper.is-in { opacity: 1; transform: none; }
 .svc-helper-title {
@@ -1103,6 +1182,10 @@ html[dir="rtl"] .svc-helper-title { font-family: var(--font-arabic); font-weight
   text-align: center;
   color: var(--text-muted);
   font-size: 0.95rem;
+}
+.services-panel.has-photo .svc-empty {
+  color: var(--on-photo-soft);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* ---------- "Build your visit" (SERVICES_CONFIG.bookingMode) ---------- */
@@ -1232,7 +1315,7 @@ html[dir="rtl"] .visit-title { font-family: var(--font-arabic); font-weight: 700
   }
   .services-tabs::-webkit-scrollbar { display: none; }
   .services-tab { scroll-snap-align: center; }
-  .services-panel { border-radius: 20px; }
+  .services-panel { border-radius: 20px; height: clamp(380px, 62vh, 560px); }
   .svc-panel-head { gap: 12px; padding: 18px 16px; }
   .svc-panel-body { padding: 16px 16px 20px; }
   .svc-search { width: 100%; }

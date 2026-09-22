@@ -441,29 +441,28 @@
     const titleEl = $("#svcPanelTitle");
     const countEl = $("#svcPanelCount");
     const iconEl = $("#svcPanelIcon");
-    const headEl = $("#svcPanelHead");
     if (titleEl) titleEl.textContent = sub.name[currentLang];
     if (countEl) countEl.textContent = items.length ? countLabel(items.length) : "";
     if (iconEl) iconEl.innerHTML = iconSvg(cat, 24);
-    if (headEl) {
-      // Each category's own photo as the panel-head backdrop, with the
-      // same light dark-overlay wash the Services banner and category
-      // tab backgrounds already use elsewhere — var(--overlay-dir) flips
-      // for RTL automatically, no extra JS needed.
-      if (cat.image) {
-        headEl.style.backgroundImage =
-          `linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)), url('assets/images/optimized/${cat.image}')`;
-        headEl.classList.add("has-photo");
-      } else {
-        headEl.style.backgroundImage = "";
-        headEl.classList.remove("has-photo");
-      }
+    // Each category's own photo as the backdrop for the whole panel — head
+    // and body both sit on it, with cards turning translucent (.has-photo,
+    // in css/style.css) so the photo shows through around and behind them.
+    // Same light dark-overlay wash the Services banner already uses
+    // elsewhere; var(--overlay-dir) flips for RTL automatically.
+    if (cat.image) {
+      panel.style.backgroundImage =
+        `linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)), url('assets/images/optimized/${cat.image}')`;
+      panel.classList.add("has-photo");
+    } else {
+      panel.style.backgroundImage = "";
+      panel.classList.remove("has-photo");
     }
     panel.setAttribute("aria-labelledby", "svctab-" + cat.id);
 
-    // Hold the outgoing height across the swap so the page never jumps.
-    const previousHeight = body.offsetHeight;
-    if (previousHeight) body.style.minHeight = previousHeight + "px";
+    // The panel has a fixed height (see css) with the body scrolling
+    // inside it, so — unlike a height that used to change with content —
+    // there's no longer a page-level layout jump to guard against when
+    // switching between a short and a long subcategory.
 
     if (!items.length) {
       body.innerHTML = `<p class="svc-empty">${svcText("noResults")}</p>`;
@@ -478,13 +477,26 @@
         ${helperCardHtml(sub, items.length)}`;
     }
 
-    // Release the held height once the new content has laid out.
-    requestAnimationFrame(() => {
-      body.style.minHeight = "";
-    });
+    // A subcategory switch should always land at the top of the scrollable
+    // body, not wherever the previous, unrelated list happened to leave
+    // the scroll position.
+    body.scrollTop = 0;
 
     animatePanelIn(body, opts.direction || 0, opts.animate !== false);
     announceResults(sub, items.length);
+    // rAF: scrollHeight isn't reliable until the new content has laid out.
+    requestAnimationFrame(updatePanelFade);
+  }
+
+  // Shows the bottom fade only while there's actually more to scroll to —
+  // hidden for a list that fits, and once scrolled to the end.
+  function updatePanelFade() {
+    const body = $("#svcPanelBody");
+    const fade = $("#svcPanelFade");
+    if (!body || !fade) return;
+    const scrollable = body.scrollHeight - body.clientHeight > 2;
+    const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 2;
+    fade.classList.toggle("is-visible", scrollable && !atBottom);
   }
 
   function renderServices() {
@@ -835,9 +847,14 @@
     const tabsEl = $("#servicesTabs");
     const railEl = $("#servicesRail");
     const panelEl = $("#servicesPanel");
+    const bodyEl = $("#svcPanelBody");
     const searchEl = $("#serviceSearch");
     const clearEl = $("#serviceSearchClear");
     const summaryEl = $("#visitSummary");
+
+    if (bodyEl) {
+      bodyEl.addEventListener("scroll", updatePanelFade, { passive: true });
+    }
 
     if (tabsEl) {
       tabsEl.addEventListener("click", (e) => {
@@ -932,12 +949,14 @@
       resizeRaf = requestAnimationFrame(() => {
         positionTabIndicator($(".services-tab.active"));
         positionRailIndicator($(".rail-item.active"));
+        updatePanelFade();
       });
     });
     if (document.fonts && document.fonts.ready) {
       document.fonts.ready.then(() => {
         positionTabIndicator($(".services-tab.active"));
         positionRailIndicator($(".rail-item.active"));
+        updatePanelFade();
       });
     }
   }
