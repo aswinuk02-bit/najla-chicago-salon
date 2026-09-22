@@ -306,22 +306,36 @@ html[dir="rtl"] .hero { justify-content: flex-end; text-align: right; }
   position: absolute; inset: 0;
   background-image:
     linear-gradient(var(--hero-scrim-dir), rgba(36, 23, 19, 0.72) 0%, rgba(36, 23, 19, 0.4) 38%, rgba(36, 23, 19, 0.08) 62%, rgba(36, 23, 19, 0) 82%),
-    url('../assets/images/optimized/banner-image-4.jpg');
-  /* This photo's subject sits dead-center with plain background on both
-     sides; at plain `cover` there's zero horizontal slack to pan with
-     (width is the constraining dimension), so it's zoomed in a bit here
-     purely to unlock room to shift the hair right, off the text column. */
-  background-size: 165% auto;
-  background-position: 8% 22%;
+    url('../assets/images/optimized/banner-image-5.jpg');
+  /* Subject/hair already sit right-of-centre with plain background on
+     the left, but the photo's own aspect ratio (1.75:1) is close enough
+     to most viewports' that `cover` alone leaves little to no horizontal
+     slack to pan with — zoomed in a bit here purely to unlock room to
+     push the hair further right, off the text column. */
+  background-size: 140% auto;
+  background-position: 4% 26%;
   background-repeat: no-repeat;
   background-attachment: fixed;
   z-index: 0;
 }
 /* Mirrors the crop so the hair shifts to the opposite side from wherever
    the text column lands, matching .hero's RTL text flip below. */
-html[dir="rtl"] .hero-bg { background-position: 92% 22%; }
+html[dir="rtl"] .hero-bg { background-position: 96% 26%; }
 @media (max-width: 768px) {
-  .hero-bg { background-attachment: scroll; }
+  .hero-bg {
+    background-attachment: scroll;
+    /* The 140%-zoom above is sized off *width* to create horizontal pan
+       room on wide/short viewports — on a narrow/tall phone screen that
+       same width-based sizing under-covers the height badly (aspect
+       ratio math, not a typo). Text is centered under 640px anyway (see
+       .hero-inner below), so there's no side to keep clear for it here;
+       plain `cover` both fully covers the frame and, being landscape
+       cropped into a portrait box, still leaves plenty of its own
+       horizontal slack to bias toward the hair/face. */
+    background-size: cover;
+    background-position: 64% center;
+  }
+  html[dir="rtl"] .hero-bg { background-position: 64% center; }
 }
 
 /* Decorative side text + script accent, echoing the editorial-magazine
