@@ -3,37 +3,52 @@
    ========================================================================= */
 
 :root {
-  /* Nude, blush surfaces */
-  --bg:          #fff9f5;
-  --bg-alt:      #ebd9cf;
-  --surface:     #ffffff;
-  --surface-alt: #ebd9cf;
-  --border:      rgba(183, 110, 90, 0.22);
+  /* Clay/terracotta surfaces */
+  --bg:          #efdccf;
+  --bg-alt:      #e4cab9; /* midpoint between --bg and --surface, kept
+                              visible as a step now that --surface itself
+                              got much deeper than the old near-white */
+  --surface:     #d9b8a3;
+  --surface-alt: #e4cab9;
+  --border:      rgba(156, 90, 70, 0.22);
 
-  /* Rose gold accents — 700 is the text-safe shade for small text on
+  /* Terracotta accents — 700 is the text-safe shade for small text on
      light surfaces (eyebrows, labels, stat values); 500/600 are for
      buttons, gradients and larger/decorative use; 300/100 are light
-     accents used on dark surfaces (hero photo, footer). */
-  --gold-700: #9c5644;
-  --gold-600: #b76e5a;
+     accents used on dark surfaces (hero photo, footer) and are
+     deliberately left on the old, lighter gold family below — their job
+     is contrast against those dark backgrounds, not matching this
+     lighter surface palette. */
+  --gold-700: #7e4633;
+  --gold-600: #9c5a46;
   --gold-500: #c98874;
   --gold-300: #dba28f;
   --gold-100: #f3ddd3;
   --gold:     var(--gold-600);
 
   /* Text */
-  --ink:        #3a2b27;
-  --ink-soft:   #6e5b54;
+  --ink:        #2a1d19;
+  /* Darkened from the old #6e5b54 (kept, same hue/saturation) — that
+     value gave 6.4:1 against the old white --surface, but only 3.45:1
+     against the new, notably darker --surface (#d9b8a3), failing AA for
+     normal text (testimonial quotes, contact details, stat labels all
+     use it on that background). #544540 clears both: 4.9:1 on --surface,
+     6.9:1 on --bg. */
+  --ink-soft:   #544540;
   --black-text: #2a1512;
   --white:      #ffffff;
 
   /* Semantic aliases — the names the Services menu is written against.
      Same values as above, so there's still one palette, not two:
-       --accent        #b76e5a  pill fill, hovers, decorative accents
-       --accent-strong #9c5644  buttons, links, small text (AA on --bg,
-                                --surface and white: 5.5 / 4.0 / 5.5:1)
-       --text          #3a2b27
-       --text-muted    #6e5b54  (4.7:1 on --surface, 6.4:1 on white) */
+       --accent        #9c5a46  pill fill, hovers, decorative accents
+       --accent-strong #7e4633  buttons, links, small text (4.0:1 on
+                                --surface for bold text ≥14px — a shade
+                                under the 4.5:1 AA text minimum; fine for
+                                large/bold labels, worth revisiting if
+                                strict AA compliance matters more than
+                                the exact requested hex)
+       --text          #2a1d19
+       --text-muted    #544540  (4.9:1 on --surface, 6.9:1 on --bg) */
   --accent:        var(--gold-600);
   --accent-strong: var(--gold-700);
   --text:          var(--ink);
@@ -58,9 +73,9 @@
   --radius-sm: 10px;
   --radius-md: 18px;
   --radius-lg: 28px;
-  --shadow-sm: 0 4px 16px rgba(139, 79, 63, 0.10);
-  --shadow-md: 0 12px 32px rgba(139, 79, 63, 0.14);
-  --shadow-lg: 0 20px 50px rgba(139, 79, 63, 0.20);
+  --shadow-sm: 0 4px 16px rgba(126, 70, 51, 0.10);
+  --shadow-md: 0 12px 32px rgba(126, 70, 51, 0.14);
+  --shadow-lg: 0 20px 50px rgba(126, 70, 51, 0.20);
 
   --header-h: 84px;
 
@@ -208,13 +223,13 @@ html[dir="rtl"] .eyebrow { letter-spacing: normal; }
   top: 0; left: 0; right: 0;
   z-index: 1000;
   height: var(--header-h);
-  background: rgba(255, 249, 245, 0.85);
+  background: rgba(239, 220, 207, 0.85);
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
-  border-bottom: 1px solid rgba(183, 110, 90, 0.22);
+  border-bottom: 1px solid rgba(156, 90, 70, 0.22);
   transition: box-shadow 0.3s ease;
 }
-.site-header.scrolled { box-shadow: 0 4px 24px rgba(139, 79, 63, 0.18); }
+.site-header.scrolled { box-shadow: 0 4px 24px rgba(126, 70, 51, 0.18); }
 
 .header-inner {
   height: 100%;
@@ -588,9 +603,9 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   --svc-slide: 28px;
   --svc-radius: 24px;
   --svc-radius-sm: 16px;
-  --svc-shadow: 0 10px 34px rgba(139, 79, 63, 0.09);
-  --svc-shadow-lift: 0 14px 28px rgba(139, 79, 63, 0.16);
-  --svc-hairline: rgba(183, 110, 90, 0.16);
+  --svc-shadow: 0 10px 34px rgba(126, 70, 51, 0.09);
+  --svc-shadow-lift: 0 14px 28px rgba(126, 70, 51, 0.16);
+  --svc-hairline: rgba(156, 90, 70, 0.16);
 }
 
 /* Sticky pill bar. Full-bleed so the blurred backdrop spans the viewport
@@ -601,7 +616,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   z-index: 20;
   padding: 14px 0;
   margin-bottom: 30px;
-  background: rgba(255, 249, 245, 0.86);
+  background: rgba(239, 220, 207, 0.86);
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
 }
@@ -622,7 +637,7 @@ html[dir="rtl"] .about-media-accent { left: auto; right: -24px; }
   top: 0; left: 0;
   border-radius: 50px;
   background: var(--accent);
-  box-shadow: 0 6px 16px rgba(139, 79, 63, 0.22);
+  box-shadow: 0 6px 16px rgba(126, 70, 51, 0.22);
   transition: transform var(--svc-duration) var(--svc-ease);
   will-change: transform;
   pointer-events: none;
@@ -680,11 +695,11 @@ html[dir="rtl"] .services-tab { font-family: var(--font-arabic); }
   border-radius: var(--svc-radius);
   background: var(--surface-alt);
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 86, 68, 0.3) transparent;
+  scrollbar-color: rgba(126, 70, 51, 0.3) transparent;
 }
 .services-rail::-webkit-scrollbar { width: 6px; }
 .services-rail::-webkit-scrollbar-thumb {
-  background: rgba(156, 86, 68, 0.28);
+  background: rgba(126, 70, 51, 0.28);
   border-radius: 50px;
 }
 /* Soft fade so a scrollable rail reads as "more below" rather than a hard cut. */
@@ -705,7 +720,7 @@ html[dir="rtl"] .services-tab { font-family: var(--font-arabic); }
   top: 0; left: 0;
   border-radius: var(--svc-radius-sm);
   background: var(--white);
-  box-shadow: 0 6px 18px rgba(139, 79, 63, 0.14);
+  box-shadow: 0 6px 18px rgba(126, 70, 51, 0.14);
   transition: transform var(--svc-duration) var(--svc-ease);
   will-change: transform;
   pointer-events: none;
@@ -858,11 +873,11 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
   overflow-x: hidden;
   padding: 20px 24px 26px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(156, 86, 68, 0.3) transparent;
+  scrollbar-color: rgba(126, 70, 51, 0.3) transparent;
 }
 .svc-panel-body::-webkit-scrollbar { width: 6px; }
 .svc-panel-body::-webkit-scrollbar-thumb {
-  background: rgba(156, 86, 68, 0.28);
+  background: rgba(126, 70, 51, 0.28);
   border-radius: 50px;
 }
 /* Soft fade at the foot of the panel so a scrollable body reads as "more
@@ -895,7 +910,7 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
   min-height: 44px;
   padding: 10px 40px;
   border-radius: 50px;
-  border: 1px solid rgba(183, 110, 90, 0.24);
+  border: 1px solid rgba(156, 90, 70, 0.24);
   background: var(--bg);
   color: var(--text);
   font-size: 0.88rem;
@@ -907,20 +922,20 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
 .svc-search input::-webkit-search-cancel-button { display: none; }
 .svc-search input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(183, 110, 90, 0.16);
+  box-shadow: 0 0 0 3px rgba(156, 90, 70, 0.16);
 }
 /* Frosted glass over a photo — translucent instead of the opaque --bg
    fill, plus extra lift so it stays crisply separated from a busy photo
    edge rather than relying on its 1px border alone. */
 .services-panel.has-photo .svc-search input {
-  background: rgba(255, 249, 245, 0.72);
+  background: rgba(239, 220, 207, 0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-color: rgba(255, 255, 255, 0.5);
   box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22);
 }
 .services-panel.has-photo .svc-search input:focus {
-  box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22), 0 0 0 3px rgba(183, 110, 90, 0.28);
+  box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22), 0 0 0 3px rgba(156, 90, 70, 0.28);
 }
 .svc-search-icon {
   position: absolute;
@@ -982,20 +997,20 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
               box-shadow var(--svc-duration-fast) var(--svc-ease),
               border-color var(--svc-duration-fast) var(--svc-ease);
 }
-.svc-card.is-in:hover { border-color: rgba(183, 110, 90, 0.34); }
+.svc-card.is-in:hover { border-color: rgba(156, 90, 70, 0.34); }
 
 /* Frosted glass over a photo — the card becomes a translucent, blurred
    chip the backdrop shows through, rather than an opaque tile sitting on
    top of it. Conditional on .has-photo: without a photo behind it there's
    nothing to show through, so the opaque --bg fill above is what shows. */
 .services-panel.has-photo .svc-card {
-  background: rgba(255, 249, 245, 0.6);
+  background: rgba(239, 220, 207, 0.6);
   border-color: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 .services-panel.has-photo .svc-card.is-in:hover {
-  background: rgba(255, 249, 245, 0.78);
+  background: rgba(239, 220, 207, 0.78);
   border-color: rgba(255, 255, 255, 0.6);
 }
 .services-panel.has-photo .svc-card.is-addon {
@@ -1212,7 +1227,7 @@ html[dir="rtl"] .svc-helper-title { font-family: var(--font-arabic); font-weight
   padding: 18px 20px;
   border-radius: var(--radius-lg);
   background: var(--white);
-  box-shadow: 0 18px 44px rgba(139, 79, 63, 0.22);
+  box-shadow: 0 18px 44px rgba(126, 70, 51, 0.22);
 }
 .visit-summary[hidden] { display: none; }
 .visit-head {
