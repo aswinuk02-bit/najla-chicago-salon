@@ -23,18 +23,22 @@
     // Local photos only — no external placeholder services. Add/remove
     // entries here as real photos are swapped in under assets/images/.
     galleryImages: [
-      { file: "banner-image.jpg", alt: { en: "Hair styling at Najla Chicago Salon", ar: "تصفيف الشعر في صالون نجلاء شيكاغو" } },
       { file: "hair-image.jpg", alt: { en: "Stylist finishing a client's hair", ar: "أخصائية تنهي تصفيف شعر العميلة" } },
       { file: "hair-2.jpg", alt: { en: "Hair wash at the basin", ar: "غسيل الشعر" } },
+      { file: "hair-gallery.jpg", alt: { en: "Trimming freshly highlighted hair", ar: "تقليم الشعر المصبوغ حديثًا" } },
       { file: "skin.jpg", alt: { en: "Facial skin treatment", ar: "علاج البشرة" } },
       { file: "nail-salon-1.jpg", alt: { en: "Manicure finish", ar: "لمسة نهائية للمانيكير" } },
       { file: "nail-salon-2.jpg", alt: { en: "Nail polish colour selection", ar: "اختيار ألوان طلاء الأظافر" } },
       { file: "nail-salon-3.jpg", alt: { en: "Nail polish application", ar: "تطبيق طلاء الأظافر" } },
       { file: "massage-1.jpg", alt: { en: "Hot stone massage treatment", ar: "علاج مساج بالأحجار الساخنة" } },
-      { file: "massage-2.jpg", alt: { en: "Relaxing massage session", ar: "جلسة مساج استرخاء" } },
       { file: "eyelash-eyebrow.jpg", alt: { en: "Eyelash extension application", ar: "تركيب رموش صناعية" } },
+      { file: "threading-gallery.jpg", alt: { en: "Eyebrow threading", ar: "خيط الحواجب" } },
+      { file: "waxing.jpg", alt: { en: "Facial treatment in progress", ar: "جلسة علاج للوجه" } },
+      { file: "waxing-gallery.jpg", alt: { en: "Leg waxing treatment", ar: "إزالة شعر الساق بالشمع" } },
       { file: "henna.jpg", alt: { en: "Bridal henna design", ar: "نقش حناء للعروس" } },
-      { file: "waxing.jpg", alt: { en: "Facial treatment in progress", ar: "جلسة علاج للوجه" } }
+      { file: "henna-gallery.jpg", alt: { en: "Intricate bridal henna on the palm", ar: "نقش حناء عروس دقيق على الكف" } },
+      { file: "henna-gallery-2.jpg", alt: { en: "Applying henna by hand", ar: "تطبيق الحناء يدويًا" } },
+      { file: "equipment-gallery.jpg", alt: { en: "Our professional styling tools", ar: "أدواتنا الاحترافية للتصفيف" } }
     ]
   };
 

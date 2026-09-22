@@ -180,7 +180,6 @@ later.
 |---|---|---|
 | `banner-image-5.jpg` | **Hero** background (`#home`) | Close-up flowing-hair shot with the face at one edge, hair already weighted toward the other side. On desktop (≥769px) `.hero-bg` zooms it in (`background-size: 140% auto`) purely to get horizontal pan room — at true `cover` this photo's aspect ratio (1.75:1) is close enough to most viewports' that it leaves little to no slack — then pans (`4% 26%`) to shift the hair further off the text column; `html[dir="rtl"] .hero-bg` mirrors that pan (`96% 26%`). Under 769px the same width-based zoom would badly under-cover a narrow/tall phone screen (it's sized off width, and a portrait viewport needs far more height than that yields), so a mobile override switches to plain `cover` at a fixed `64% center` — text is centered under 640px anyway, so there's no side left to keep clear. Preloaded via `<link rel="preload">` so it doesn't flash in late. |
 | `banner-image-4.jpg` | **Services & Treatments** banner | Editorial back-of-head hair shot, subject centered with plain background on both sides. Its heading is centered, not off to one side, so it keeps plain `cover` with no pan needed. |
-| `banner-image.jpg` | **Gallery** only | The original banner photo — kept in the Gallery grid via `CONFIG.galleryImages` in `js/main.js`. |
 | `hair-image.jpg` | **About** section photo frame | Salon-interior shot of a stylist finishing a client's hair — the framed portrait image next to the About text. |
 | `hair-2.jpg` | **Hair** tab background (Services → Hair) | Hair-wash-at-the-basin shot. |
 | `waxing.jpg` | **Waxing & Threading** tab background | |
@@ -196,8 +195,10 @@ every panel rather than an opt-in list of category ids — see the "Category
 photo backgrounds" comment there.
 
 Every photo currently in `assets/images/optimized/` is in use somewhere on
-the site. `nail-salon-2.jpg`, `nail-salon-3.jpg`, `massage-2.jpg`, plus a
-second appearance of every category photo above, power the **Gallery** grid
+the site. `nail-salon-2.jpg`, `nail-salon-3.jpg`, a second appearance of
+every category photo above, plus six gallery-only shots (`hair-gallery.jpg`,
+`waxing-gallery.jpg`, `threading-gallery.jpg`, `henna-gallery.jpg`,
+`henna-gallery-2.jpg`, `equipment-gallery.jpg`) power the **Gallery** grid
 too — see `CONFIG.galleryImages` in `js/main.js` to add, remove or reorder
 them.
 
