@@ -644,6 +644,11 @@ html[dir="rtl"] .services-tab { font-family: var(--font-arabic); }
   gap: 24px;
   align-items: start;
 }
+/* Categories with a single subcategory (Massage, Moroccan Bath, Henna,
+   Eyelash & Eyebrow) drop the rail entirely — one item in it is just a
+   dead column — and give the width to the cards instead. */
+.services-menu.is-single { grid-template-columns: minmax(0, 1fr); }
+.services-menu.is-single .services-rail-wrap { display: none; }
 
 /* ---------- Subcategory rail ---------- */
 .services-rail-wrap {
@@ -756,30 +761,76 @@ html[dir="rtl"] .rail-item { font-family: var(--font-arabic); }
 /* ---------- Service panel ---------- */
 .services-panel {
   min-width: 0;
-  padding: 22px 24px 26px;
   border-radius: var(--svc-radius);
   background: var(--white);
   box-shadow: var(--svc-shadow);
+  overflow: hidden; /* clips the head's photo to the panel's rounded corners */
 }
 .services-panel:focus { outline: none; }
 
+/* Each category's own photo (services-data.js → image) sits behind this
+   header as a plain CSS background, set from JS in renderPanel() —
+   .has-photo just swaps the title/count/icon to the light on-photo
+   colors used everywhere else a photo sits directly behind text. */
 .svc-panel-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding-bottom: 16px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--svc-hairline);
+  padding: 22px 24px;
+  background-color: var(--surface-alt);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: background-image var(--svc-duration-fast) var(--svc-ease);
+}
+@media (max-width: 767px) {
+  .svc-panel-head { background-attachment: scroll; }
+}
+.svc-panel-icon {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--white);
+  background: var(--accent);
+  transition: background var(--svc-duration-fast) var(--svc-ease),
+              color var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-panel-head.has-photo .svc-panel-icon {
+  color: var(--on-photo);
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 .svc-panel-heading { flex: 1; min-width: 0; }
-.svc-panel-title { margin: 0; font-size: 1.3rem; color: var(--text); }
+.svc-panel-title {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text);
+  transition: color var(--svc-duration-fast) var(--svc-ease);
+}
 html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight: 700; }
 .svc-panel-count {
   margin-top: 2px;
   font-size: 0.82rem;
   color: var(--text-muted);
+  transition: color var(--svc-duration-fast) var(--svc-ease);
 }
+.svc-panel-head.has-photo .svc-panel-title {
+  color: var(--on-photo);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
+}
+.svc-panel-head.has-photo .svc-panel-count {
+  color: var(--on-photo-soft);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.svc-panel-body { padding: 20px 24px 26px; }
 
 .svc-search {
   position: relative;
@@ -804,6 +855,15 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
 .svc-search input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(183, 110, 90, 0.16);
+}
+/* Extra lift so the search field stays crisply separated from a busy
+   photo edge, rather than relying on its 1px border alone. */
+.svc-panel-head.has-photo .svc-search input {
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22);
+}
+.svc-panel-head.has-photo .svc-search input:focus {
+  box-shadow: 0 4px 14px rgba(36, 23, 19, 0.22), 0 0 0 3px rgba(183, 110, 90, 0.28);
 }
 .svc-search-icon {
   position: absolute;
@@ -846,18 +906,47 @@ html[dir="rtl"] .svc-panel-title { font-family: var(--font-arabic); font-weight:
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+/* Row layout — icon, text column, action — all vertically centred, so a
+   name-only service (most of them until durations/descriptions land)
+   still reads as one block rather than a name and a button at opposite
+   ends of an empty card. */
 .svc-card {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 16px 18px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
   border-radius: var(--svc-radius-sm);
+  border: 1px solid var(--svc-hairline);
   background: var(--bg);
   opacity: 0;
   transform: translateY(var(--svc-rise));
   transition: opacity var(--svc-duration) var(--svc-ease),
               transform var(--svc-duration-fast) var(--svc-ease),
-              box-shadow var(--svc-duration-fast) var(--svc-ease);
+              box-shadow var(--svc-duration-fast) var(--svc-ease),
+              border-color var(--svc-duration-fast) var(--svc-ease);
+}
+.svc-card.is-in:hover { border-color: rgba(183, 110, 90, 0.34); }
+
+.svc-card-icon {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--accent-strong);
+  background: var(--gold-100);
+}
+.svc-card.is-addon .svc-card-icon {
+  color: var(--white);
+  background: var(--accent);
+}
+.svc-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 .svc-card.is-in { opacity: 1; transform: none; }
 .svc-card.is-in:hover {
@@ -893,24 +982,15 @@ html[dir="rtl"] .svc-card-name { font-family: var(--font-arabic); font-weight: 7
   line-height: 1.5;
   color: var(--text-muted);
 }
-.svc-card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: auto;
-  padding-top: 12px;
-}
 .svc-card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 12px;
-  margin: 0;
+  gap: 2px 12px;
+  margin: 2px 0 0;
   font-size: 0.82rem;
   font-weight: 600;
   color: var(--text);
 }
-.svc-card-meta-spacer { flex: 1; }
 
 .svc-action {
   display: inline-flex;
@@ -1152,8 +1232,9 @@ html[dir="rtl"] .visit-title { font-family: var(--font-arabic); font-weight: 700
   }
   .services-tabs::-webkit-scrollbar { display: none; }
   .services-tab { scroll-snap-align: center; }
-  .services-panel { padding: 18px 16px 22px; border-radius: 20px; }
-  .svc-panel-head { gap: 12px; }
+  .services-panel { border-radius: 20px; }
+  .svc-panel-head { gap: 12px; padding: 18px 16px; }
+  .svc-panel-body { padding: 16px 16px 20px; }
   .svc-search { width: 100%; }
 
   /* Summary docks to the bottom of the screen and lifts the FABs clear. */
@@ -1170,6 +1251,18 @@ html[dir="rtl"] .visit-title { font-family: var(--font-arabic); font-weight: 700
 
 @media (max-width: 639px) {
   .svc-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phones: trim the row's fixed furniture (icon, gaps, button padding) so
+   the service name gets the width it needs and stops wrapping to three
+   lines. */
+@media (max-width: 480px) {
+  .svc-card { gap: 10px; padding: 12px 13px; }
+  .svc-card-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .svc-card-icon svg { width: 19px; height: 19px; }
+  .svc-card-name { font-size: 0.93rem; }
+  .svc-action { padding: 0 15px; font-size: 0.82rem; }
+  .svc-panel-icon { width: 40px; height: 40px; border-radius: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

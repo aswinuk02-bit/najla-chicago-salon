@@ -64,6 +64,7 @@ const SERVICES_DATA = [
   {
     id: "hair",
     icon: "hair",
+    image: "hair-2.jpg",
     name: { en: "Hair", ar: "الشعر" },
     subcategories: [
       {
@@ -215,6 +216,7 @@ const SERVICES_DATA = [
   {
     id: "waxing-threading",
     icon: "waxing",
+    image: "waxing.jpg",
     name: { en: "Waxing & Threading", ar: "الشمع والخيط" },
     subcategories: [
       {
@@ -262,6 +264,7 @@ const SERVICES_DATA = [
   {
     id: "skin",
     icon: "skin",
+    image: "skin.jpg",
     name: { en: "Skin", ar: "البشرة" },
     subcategories: [
       {
@@ -302,6 +305,7 @@ const SERVICES_DATA = [
   {
     id: "nails",
     icon: "nails",
+    image: "nail-salon-1.jpg",
     name: { en: "Nails", ar: "الأظافر" },
     subcategories: [
       {
@@ -359,6 +363,7 @@ const SERVICES_DATA = [
   {
     id: "lash-brow",
     icon: "lash",
+    image: "eyelash-eyebrow.jpg",
     name: { en: "Eyelash & Eyebrow", ar: "الرموش والحواجب" },
     subcategories: [
       {
@@ -384,6 +389,7 @@ const SERVICES_DATA = [
   {
     id: "massage",
     icon: "massage",
+    image: "massage-1.jpg",
     name: { en: "Massage", ar: "المساج" },
     subcategories: [
       {
@@ -414,6 +420,7 @@ const SERVICES_DATA = [
   {
     id: "moroccan-bath",
     icon: "bath",
+    image: "moroccan-bath.jpg",
     name: { en: "Moroccan Bath", ar: "الحمام المغربي" },
     subcategories: [
       {
@@ -432,6 +439,7 @@ const SERVICES_DATA = [
   {
     id: "henna",
     icon: "henna",
+    image: "henna.jpg",
     name: { en: "Henna", ar: "الحناء" },
     subcategories: [
       {

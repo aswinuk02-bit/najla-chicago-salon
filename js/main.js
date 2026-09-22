@@ -292,10 +292,34 @@
       "?text=" + encodeURIComponent(svcText("bookMessage", { name: name }));
   }
 
+  /* Category icons, keyed by the `icon` field already on each category in
+     services-data.js. Stroke-based to match the icons used in the hero. */
+  const SERVICE_ICONS = {
+    hair: '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M20 5 8.5 13M20 19 8.5 11" stroke-linecap="round"/>',
+    waxing: '<path d="M5.4 18.6 15 9" stroke-linecap="round"/><path d="M14.2 5.6a3.6 3.6 0 1 1 5.1 5.1l-2 2-5.1-5.1 2-2Z" stroke-linejoin="round"/>',
+    skin: '<circle cx="12" cy="12" r="8.2"/><path d="M9.2 10.2h.01M14.8 10.2h.01" stroke-linecap="round" stroke-width="2.2"/><path d="M9 14.6c1.8 1.4 4.2 1.4 6 0" stroke-linecap="round"/>',
+    nails: '<path d="M9.2 3h5.6v3.8l1.4 2.4V19a2 2 0 0 1-2 2h-4.4a2 2 0 0 1-2-2V9.2l1.4-2.4V3Z" stroke-linejoin="round"/><path d="M7.8 12.4h8.4" stroke-linecap="round"/>',
+    lash: '<path d="M2.6 12s3.6-5.6 9.4-5.6S21.4 12 21.4 12s-3.6 5.6-9.4 5.6S2.6 12 2.6 12Z" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.6"/>',
+    massage: '<ellipse cx="12" cy="16.4" rx="7.4" ry="3.2"/><ellipse cx="12" cy="8.6" rx="5.4" ry="2.8"/>',
+    bath: '<path d="M3.6 12.4h16.8V15a5 5 0 0 1-5 5H8.6a5 5 0 0 1-5-5v-2.6Z" stroke-linejoin="round"/><path d="M7.4 12.4V6.6a2.2 2.2 0 0 1 4.4 0" stroke-linecap="round"/>',
+    henna: '<circle cx="12" cy="12" r="2.7"/><circle cx="12" cy="5.2" r="1.8"/><circle cx="12" cy="18.8" r="1.8"/><circle cx="5.2" cy="12" r="1.8"/><circle cx="18.8" cy="12" r="1.8"/>'
+  };
+
+  function iconSvg(cat, size) {
+    const paths = SERVICE_ICONS[cat.icon];
+    if (!paths) return "";
+    const s = size || 20;
+    return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">${paths}</svg>`;
+  }
+
   /* ---------------------------------------------------------------------
      Services — templates
      --------------------------------------------------------------------- */
-  function serviceCardHtml(item, sub) {
+  /* Laid out as a row — icon, then the text column, then the action — so a
+     service that only has a name (most of them, until durations and
+     descriptions are filled in) still reads as one solid block instead of
+     a name stranded at the top and a button stranded at the bottom. */
+  function serviceCardHtml(item, sub, cat) {
     const name = item[currentLang];
     const desc = item.description ? item.description[currentLang] : "";
     const meta = [formatDuration(item), formatPrice(item)].filter(Boolean);
@@ -311,14 +335,15 @@
 
     return `
       <article class="svc-card${item.isAddOn ? " is-addon" : ""}">
-        ${tags.length ? `<div class="svc-card-tags">${tags.join("")}</div>` : ""}
-        <h4 class="svc-card-name">${name}</h4>
-        ${item.isAddOn ? `<p class="svc-card-parent">${svcText("addOnFor", { name: parentName })}</p>` : ""}
-        ${desc ? `<p class="svc-card-desc">${desc}</p>` : ""}
-        <div class="svc-card-foot">
-          ${meta.length ? `<p class="svc-card-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p>` : `<span class="svc-card-meta-spacer" aria-hidden="true"></span>`}
-          ${action}
+        <span class="svc-card-icon" aria-hidden="true">${iconSvg(cat, 22)}</span>
+        <div class="svc-card-main">
+          ${tags.length ? `<div class="svc-card-tags">${tags.join("")}</div>` : ""}
+          <h4 class="svc-card-name">${name}</h4>
+          ${item.isAddOn ? `<p class="svc-card-parent">${svcText("addOnFor", { name: parentName })}</p>` : ""}
+          ${desc ? `<p class="svc-card-desc">${desc}</p>` : ""}
+          ${meta.length ? `<p class="svc-card-meta">${meta.map((m) => `<span>${m}</span>`).join("")}</p>` : ""}
         </div>
+        ${action}
       </article>`;
   }
 
@@ -379,6 +404,11 @@
     if (!rail) return;
     const cat = getCategory(activeCategoryId);
 
+    // Four of the eight categories have a single subcategory; a one-item
+    // rail earns nothing but a dead column, so the panel takes the width.
+    const menu = $("#servicesMenu");
+    if (menu) menu.classList.toggle("is-single", cat.subcategories.length < 2);
+
     rail.innerHTML = `<span class="rail-indicator" id="railIndicator" aria-hidden="true"></span>` +
       cat.subcategories.map((sub) => {
         const count = matchedItems(sub).length;
@@ -410,8 +440,25 @@
 
     const titleEl = $("#svcPanelTitle");
     const countEl = $("#svcPanelCount");
+    const iconEl = $("#svcPanelIcon");
+    const headEl = $("#svcPanelHead");
     if (titleEl) titleEl.textContent = sub.name[currentLang];
     if (countEl) countEl.textContent = items.length ? countLabel(items.length) : "";
+    if (iconEl) iconEl.innerHTML = iconSvg(cat, 24);
+    if (headEl) {
+      // Each category's own photo as the panel-head backdrop, with the
+      // same light dark-overlay wash the Services banner and category
+      // tab backgrounds already use elsewhere — var(--overlay-dir) flips
+      // for RTL automatically, no extra JS needed.
+      if (cat.image) {
+        headEl.style.backgroundImage =
+          `linear-gradient(var(--overlay-dir), var(--overlay-light-from), var(--overlay-light-to)), url('assets/images/optimized/${cat.image}')`;
+        headEl.classList.add("has-photo");
+      } else {
+        headEl.style.backgroundImage = "";
+        headEl.classList.remove("has-photo");
+      }
+    }
     panel.setAttribute("aria-labelledby", "svctab-" + cat.id);
 
     // Hold the outgoing height across the swap so the page never jumps.
@@ -422,11 +469,11 @@
       body.innerHTML = `<p class="svc-empty">${svcText("noResults")}</p>`;
     } else {
       body.innerHTML = `
-        ${main.length ? `<div class="svc-grid">${main.map((item) => serviceCardHtml(item, sub)).join("")}</div>` : ""}
+        ${main.length ? `<div class="svc-grid">${main.map((item) => serviceCardHtml(item, sub, cat)).join("")}</div>` : ""}
         ${addOns.length ? `
           <section class="svc-addons">
             <h4 class="svc-addons-title">${svcText("addOnsHeading")}</h4>
-            <div class="svc-grid">${addOns.map((item) => serviceCardHtml(item, sub)).join("")}</div>
+            <div class="svc-grid">${addOns.map((item) => serviceCardHtml(item, sub, cat)).join("")}</div>
           </section>` : ""}
         ${helperCardHtml(sub, items.length)}`;
     }

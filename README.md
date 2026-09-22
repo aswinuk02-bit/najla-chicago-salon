@@ -75,6 +75,28 @@ build configuration (no build command, output directory = project root).
 Category pills (sticky under the header) → a subcategory rail (a sidebar
 from 768px up, a horizontal chip row below) → a panel of service cards.
 
+### Category photos
+
+Each top-level category (Hair, Waxing & Threading, Skin, Nails, Eyelash &
+Eyebrow, Massage, Moroccan Bath, Henna) carries an `image` field in
+`js/services-data.js`, pointing at a file in `assets/images/optimized/`:
+
+```js
+{
+  id: "massage",
+  icon: "massage",
+  image: "massage-1.jpg",   // ← this
+  name: { en: "Massage", ar: "المساج" },
+  ...
+}
+```
+
+It renders as the panel header's backdrop (behind the title, count and
+search box), with the same light dark-overlay wash used for the Services
+banner and Hero elsewhere on the site, so light text stays readable over
+any photo. Swap the filename to change a category's photo; omit `image`
+entirely to fall back to a plain white header with no photo.
+
 ### Editing services
 
 Everything is in `js/services-data.js`. A service is a compact tuple:
